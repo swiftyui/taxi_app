@@ -30,6 +30,8 @@ abstract class Colours {
   static const onWhatsAppChatBubbleColor = Color(0xFF000000);
 
   static const containerColor = Color.fromARGB(255, 218, 217, 215);
+  static const charcoal = Color(0xFF21242a);
+  static const charcoalLight = Color(0xFF4d5156);
 
   /// `Snackbar Colors`
   static const defaultSnackbar = Color(0xFF2e2e2e);

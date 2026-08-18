@@ -1,4 +1,4 @@
-import 'package:TaxiApp/src/core/widgets/app_bars/custom_app_bar.dart';
+import 'package:TaxiApp/src/features/landing/screens/landing_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -12,12 +12,18 @@ class LandingScreen extends StatefulWidget {
 class _LandingScreenState extends State<LandingScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: CustomAppBar(),
-    body: GoogleMap(
-      initialCameraPosition: const CameraPosition(
-        target: LatLng(0, 0),
-        zoom: 2,
-      ),
+    body: Stack(
+      children: [
+        const GoogleMap(
+          initialCameraPosition: CameraPosition(
+            target: LatLng(-25.7479, 28.2293),
+            zoom: 12,
+          ),
+          myLocationButtonEnabled: true,
+          zoomControlsEnabled: false,
+        ),
+        LandingBottomSheet(),
+      ],
     ),
   );
 }

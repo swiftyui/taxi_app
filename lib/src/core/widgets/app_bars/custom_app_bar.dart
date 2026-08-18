@@ -15,6 +15,8 @@ class CustomAppBar extends AppBar {
     this.titleText,
     this.titleWidget,
     this.onBackButtonPressed,
+    this.appBarColor,
+    this.textColor,
     super.key,
     super.actions,
     super.bottom,
@@ -24,8 +26,10 @@ class CustomAppBar extends AppBar {
          systemOverlayStyle: SystemUiOverlayStyle.dark,
          leading: null,
          automaticallyImplyLeading: false,
-         backgroundColor: Theme.of(Get.context!).colorScheme.surface,
-         actionsIconTheme: IconThemeData(color: Get.colorScheme.onSurface),
+         backgroundColor: appBarColor ?? Colors.white,
+         actionsIconTheme: IconThemeData(
+           color: textColor ?? Get.colorScheme.onSurface,
+         ),
          toolbarHeight: kIsWeb ? 64 : kToolbarHeight,
          clipBehavior: Clip.none,
          title:
@@ -49,7 +53,7 @@ class CustomAppBar extends AppBar {
                                },
                                child: Icon(
                                  Icons.arrow_back_ios_new_rounded,
-                                 color: Get.colorScheme.secondary,
+                                 color: textColor ?? Get.colorScheme.secondary,
                                  size: Dimensions.sixteen,
                                ).paddingAll(Dimensions.eight),
                              ).paddingOnly(right: Dimensions.eight),
@@ -57,7 +61,9 @@ class CustomAppBar extends AppBar {
                                  ? Text(
                                      'HambaGo',
                                      style: GoogleFonts.barriecito().copyWith(
-                                       color: Get.theme.colorScheme.onSurface,
+                                       color:
+                                           textColor ??
+                                           Get.theme.colorScheme.onSurface,
                                        fontSize: FontSize.twentyFour,
                                        fontWeight: FontWeight.w100,
                                      ),
@@ -68,10 +74,12 @@ class CustomAppBar extends AppBar {
                                            titleText ?? '',
                                            style: GoogleFonts.barriecito()
                                                .copyWith(
-                                                 color: Get
-                                                     .theme
-                                                     .colorScheme
-                                                     .onSurface,
+                                                 color:
+                                                     textColor ??
+                                                     Get
+                                                         .theme
+                                                         .colorScheme
+                                                         .onSurface,
                                                  fontSize: FontSize.twentyFour,
                                                  fontWeight: FontWeight.w100,
                                                ),
@@ -90,7 +98,7 @@ class CustomAppBar extends AppBar {
                                  ? Text(
                                      'HambaGo',
                                      style: GoogleFonts.barriecito().copyWith(
-                                       color: Get.theme.colorScheme.onSurface,
+                                       color: textColor ?? Colors.white,
                                        fontSize: FontSize.twentyFour,
                                        fontWeight: FontWeight.w100,
                                      ),
@@ -101,10 +109,12 @@ class CustomAppBar extends AppBar {
                                            titleText ?? '',
                                            style: GoogleFonts.barriecito()
                                                .copyWith(
-                                                 color: Get
-                                                     .theme
-                                                     .colorScheme
-                                                     .onSurface,
+                                                 color:
+                                                     textColor ??
+                                                     Get
+                                                         .theme
+                                                         .colorScheme
+                                                         .onSurface,
                                                  fontSize: FontSize.twentyFour,
                                                  fontWeight: FontWeight.w100,
                                                ),
@@ -135,6 +145,8 @@ class CustomAppBar extends AppBar {
                left: Dimensions.eight,
              ),
        );
+  final Color? appBarColor;
+  final Color? textColor;
   final VoidCallback? onMenuButtonPressed;
   final bool menuButton;
   final bool backButton;

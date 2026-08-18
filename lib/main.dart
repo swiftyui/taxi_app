@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:TaxiApp/firebase_options.dart';
+import 'package:TaxiApp/src/dependency_injection.dart';
 import 'package:TaxiApp/src/taxi_app.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -26,6 +27,8 @@ Future<Widget> _initApp() async {
   } catch (e, s) {
     debugPrint('[setupFirebase error] $e\n$s');
   }
+
+  await dependencyInjection();
 
   return TaxiApp();
 }
