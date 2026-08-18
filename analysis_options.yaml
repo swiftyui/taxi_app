@@ -1,0 +1,146 @@
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    comment_references: ignore
+  exclude: [build/**]
+
+linter:
+  rules:
+    # Pub Rules
+    - sort_pub_dependencies # Sort pub dependencies alphabetically.
+    - secure_pubspec_urls # Use secure urls in pubspec.yaml.
+    - package_names # Use lowercase_with_underscores for package names.
+    # Error Rules
+    - always_use_package_imports # Avoid relative imports for files in lib/.
+    - avoid_dynamic_calls # Avoid method calls or property accesses on a “dynamic” target.
+    - avoid_empty_else # Avoid empty else statements.
+    - avoid_print # Avoid print calls in production code.
+    - avoid_relative_lib_imports # Avoid relative imports for files in lib/.
+    - avoid_slow_async_io # Avoid slow async dart:io methods.
+    - avoid_type_to_string # Avoid .toString() in production code since results may be minified.
+    - avoid_types_as_parameter_names # Avoid types as parameter names.
+    - avoid_web_libraries_in_flutter # Avoid using web-only libraries outside Flutter web plugin packages.
+    - cancel_subscriptions # Cancel instances of dart.async.StreamSubscription.
+    - close_sinks # Close instances of dart.core.Sink.
+    - collection_methods_unrelated_type # Invocation of various collection methods with arguments of unrelated types.
+    - comment_references # Only reference in scope identifiers in doc comments.
+    - control_flow_in_finally # Avoid control flow in finally blocks.
+    - deprecated_member_use_from_same_package # Avoid using deprecated elements from within the package in which they are declared.
+    - empty_statements # Avoid empty statements.
+    - hash_and_equals # Always override hashCode if overriding ==.
+    - literal_only_boolean_expressions # Boolean expression composed only with literals.
+    - no_adjacent_strings_in_list # Don’t use adjacent strings in list.
+    - no_duplicate_case_values # Don’t use more than one case with same value.
+    - no_logic_in_create_state # Don’t put any logic in createState.
+    - no_self_assignments # Don’t assign a variable to itself.
+    - no_wildcard_variable_uses # Don’t use wildcard parameters or variables.
+    - prefer_void_to_null # Don’t use the Null type, unless you are positive that you don’t want void.
+    - test_types_in_equals # Test type arguments in operator ==(Object other).
+    - throw_in_finally # Avoid throw in finally block.
+    - unnecessary_statements # Avoid using unnecessary statements.
+    - unrelated_type_equality_checks # Equality operator == invocation with references of unrelated types.
+    - use_key_in_widget_constructors # Use key in widget constructors.
+    - valid_regexps # Use valid regular expression syntax.
+    # Styling Rules
+    - always_declare_return_types # Declare method return types.
+    - always_put_control_body_on_new_line # Separate the control structure expression from its statement.
+    - always_put_required_named_parameters_first # Put required named parameters first.
+    - annotate_overrides # Annotate overridden members.
+    - avoid_annotating_with_dynamic # Avoid annotating with dynamic when not required.
+    # - avoid_classes_with_only_static_members # Avoid defining a class that contains only static members.
+    - avoid_field_initializers_in_const_classes # Avoid field initializers in const classes.
+    - avoid_final_parameters # Avoid final for parameter declarations.
+    - avoid_function_literals_in_foreach_calls # Avoid using forEach with a function literal.
+    - avoid_implementing_value_types # Don’t implement classes that override ==.
+    - avoid_init_to_null # Don’t explicitly initialize variables to null.
+    - avoid_js_rounded_ints # Avoid JavaScript rounded ints.
+    - avoid_multiple_declarations_per_line # Don’t declare multiple variables on a single line.
+    - avoid_renaming_method_parameters # Don’t rename parameters of overridden methods.
+    - avoid_return_types_on_setters # Avoid return types on setters.
+    - avoid_returning_null_for_void # Avoid returning null for void.
+    - avoid_returning_this # Avoid returning this from methods just to enable a fluent interface.
+    - avoid_setters_without_getters # Avoid setters without getters.
+    - avoid_shadowing_type_parameters # Avoid shadowing type parameters.
+    - avoid_single_cascade_in_expression_statements # Avoid single cascade in expression statements.
+    - avoid_unnecessary_containers # Avoid unnecessary containers.
+    - avoid_unused_constructor_parameters # Avoid defining unused parameters in constructors.
+    - avoid_void_async # Avoid async functions that return void.
+    - await_only_futures # Await only futures.
+    - camel_case_extensions # Name extensions using UpperCamelCase.
+    - camel_case_types # Name types using UpperCamelCase.
+    - constant_identifier_names # Prefer using lowerCamelCase for constant names.
+    - curly_braces_in_flow_control_structures # DO use curly braces for all flow control structures.
+    - empty_catches # Avoid empty catch blocks.
+    - empty_constructor_bodies # Use ; instead of {} for empty constructor bodies.
+    - exhaustive_cases # Define case clauses for all constants in enum-like classes.
+    - file_names # Name source files using lowercase_with_underscores.
+    # - flutter_style_todos # Use Flutter TODO format: // TODO(username): message, https://URL-to-issue.
+    - implementation_imports # Don’t import implementation files from another package.
+    - implicit_call_tearoffs # Explicitly tear-off call methods when using an object as a Function.
+    - leading_newlines_in_multiline_strings # Start multiline strings with a newline.
+    - library_names # Name libraries using lowercase_with_underscores.
+    - library_prefixes # Use lowercase_with_underscores when specifying a library prefix.
+    - library_private_types_in_public_api # Avoid using private types in public APIs.
+    - matching_super_parameters # Use matching super parameter names.
+    - no_leading_underscores_for_library_prefixes # Avoid leading underscores for library prefixes.
+    - no_leading_underscores_for_local_identifiers # Avoid leading underscores for local identifiers.
+    - non_constant_identifier_names # Name non-constant identifiers using lowerCamelCase.
+    - null_check_on_nullable_type_parameter # Don’t use null check on a potentially nullable type parameter.
+    - null_closures # Do not pass null as an argument where a closure is expected.
+    - only_throw_errors # Only throw instances of classes extending either Exception or Error.
+    - overridden_fields # Don’t override fields.
+    - package_prefixed_library_names # Prefix library names with the package name and a dot-separated path.
+    - prefer_adjacent_string_concatenation # Use adjacent strings to concatenate string literals.
+    - prefer_collection_literals # Use collection literals when possible.
+    - prefer_conditional_assignment # Prefer using ??= over testing for null.
+    - prefer_const_constructors # Prefer const with constant constructors.
+    - prefer_const_constructors_in_immutables # Prefer declaring const constructors on @immutable classes.
+    - prefer_contains # Use contains for List and String instances.
+    - prefer_for_elements_to_map_fromIterable # Prefer ‘for’ elements when building maps from iterables.
+    - prefer_final_in_for_each # Prefer final in for-each loop variable if reference is not reassigned.
+    - prefer_function_declarations_over_variables # Use a function declaration to bind a function to a name.
+    - prefer_generic_function_type_aliases # Prefer generic function type aliases.
+    - prefer_if_null_operators # Prefer using if null operators.
+    - prefer_initializing_formals # Use initializing formals when possible.
+    - prefer_inlined_adds # Inline list item declarations where possible.
+    - prefer_interpolation_to_compose_strings # Use interpolation to compose strings and values.
+    - prefer_is_empty # Use isEmpty for Iterables and Maps.
+    - prefer_is_not_empty # Use isNotEmpty for Iterables and Maps.
+    - prefer_is_not_operator # Prefer is! operator.
+    - prefer_iterable_whereType # Prefer to use whereType on iterable.
+    - prefer_null_aware_operators # Prefer using null aware operators.
+    - prefer_spread_collections # Use spread collections when possible.
+    - prefer_typing_uninitialized_variables # Prefer typing uninitialized variables and fields.
+    - provide_deprecation_message # Provide a deprecation message, via @Deprecated(“message”).
+    - recursive_getters # Property getter recursively returns itself.
+    - sized_box_for_whitespace # SizedBox for whitespace.
+    - slash_for_doc_comments # Prefer using /// for doc comments.
+    - sort_child_properties_last # Sort child properties last in widget instance creations.
+    - type_init_formals # Don’t type annotate initializing formals.
+    - unnecessary_await_in_return # Unnecessary await keyword in return.
+    - unnecessary_brace_in_string_interps # Avoid using braces in interpolation when not needed.
+    - unnecessary_const # Avoid const keyword.
+    - unnecessary_constructor_name # Unnecessary .new constructor name.
+    - unnecessary_getters_setters # Avoid wrapping fields in getters and setters just to be “safe”.
+    - unnecessary_late # Don’t specify the late modifier when it is not needed.
+    - unnecessary_new # Unnecessary new keyword.
+    - unnecessary_null_aware_assignments # Avoid null in null-aware assignment.
+    - unnecessary_null_in_if_null_operators # Avoid using null in if null operators.
+    - unnecessary_nullable_for_final_variable_declarations # Use a non-nullable type for a final variable initialized with a non-nullable value.
+    - unnecessary_overrides # Don’t override a method to do a super method invocation with the same parameters.
+    - unnecessary_string_escapes # Remove unnecessary backslashes in strings.
+    - unnecessary_string_interpolations # Unnecessary string interpolation.
+    - unnecessary_this # Don’t access members with this unless avoiding shadowing.
+    - use_function_type_syntax_for_parameters # Use generic function type syntax for parameters.
+    - use_string_in_part_of_directives # Use string in part of directives.
+    - void_checks # Don’t assign to void.
+    - prefer_expression_function_bodies # Use => for short members whose body is a single return statement.
+    - prefer_single_quotes # Only use double quotes for strings containing single quotes.
+    - sort_constructors_first # Sort constructor declarations before other members.
+    - sort_unnamed_constructors_first # Sort unnamed constructor declarations first.
