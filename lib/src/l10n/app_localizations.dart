@@ -129,6 +129,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Runs on'**
   String get runsOn;
+
+  /// The conventional location permissions label
+  ///
+  /// In en, this message translates to:
+  /// **'Location Permissions'**
+  String get locationPermissions;
+
+  /// The conventional location permissions description
+  ///
+  /// In en, this message translates to:
+  /// **'HambaGo requires location permissions to function properly. Please grant the necessary permissions.'**
+  String get locationPermissionsDescription;
+
+  /// The conventional how location data is used label
+  ///
+  /// In en, this message translates to:
+  /// **'How location data is used'**
+  String get howLocationDataIsUsed;
+
+  /// The conventional location data usage description
+  ///
+  /// In en, this message translates to:
+  /// **'HambaGo uses your location data to provide accurate ride matching and navigation services. Your location data is not shared with third parties without your consent.'**
+  String get locationDataUsageDescription;
+
+  /// The conventional how location data is stored label
+  ///
+  /// In en, this message translates to:
+  /// **'How location data is stored'**
+  String get howLocationDataIsStored;
+
+  /// The conventional location data storage description
+  ///
+  /// In en, this message translates to:
+  /// **'HambaGo does not store your location data.'**
+  String get locationDataStorageDescription;
+
+  /// The conventional allow location access button label
+  ///
+  /// In en, this message translates to:
+  /// **'Allow location access'**
+  String get allowLocationAccess;
+
+  /// The conventional location access denied label
+  ///
+  /// In en, this message translates to:
+  /// **'Location access denied'**
+  String get locationAccessDenied;
+
+  /// The conventional location access denied description
+  ///
+  /// In en, this message translates to:
+  /// **'HambaGo requires location access to function properly. Please grant the necessary permissions in your device settings.'**
+  String get locationAccessDeniedDescription;
+
+  /// The conventional go to settings button label
+  ///
+  /// In en, this message translates to:
+  /// **'Go to settings'**
+  String get goToSettings;
+
+  /// The conventional access to location label
+  ///
+  /// In en, this message translates to:
+  /// **'Access to location'**
+  String get accessToLocation;
+
+  /// The conventional how you can use location services label
+  ///
+  /// In en, this message translates to:
+  /// **'How you can use location services'**
+  String get howYouCanUseLocationServices;
+
+  /// The conventional how to use location services description
+  ///
+  /// In en, this message translates to:
+  /// **'Turning on your device location allows you to share your location, which is necessary for HambaGo to provide accurate ride matching and navigation services.'**
+  String get howToUseLocationServicesDescription;
+
+  /// The conventional how we'll use location services label
+  ///
+  /// In en, this message translates to:
+  /// **'How we\'ll use location services'**
+  String get howWellUseLocationServices;
+
+  /// The conventional how we'll use location services description
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll do things like show you where your driver is, and help you find your way to your destination. We won\'t share your location with anyone else without your permission.'**
+  String get howWellUseLocationServicesDescription;
+
+  /// The conventional how you can control this label
+  ///
+  /// In en, this message translates to:
+  /// **'How you can control this'**
+  String get howYouCanControlThis;
+
+  /// The conventional how you can control this description
+  ///
+  /// In en, this message translates to:
+  /// **'You can turn off location services at any time in your device settings. You can also choose to share your location with HambaGo only when you\'re using the app.'**
+  String get howYouCanControlThisDescription;
+
+  /// The conventional continue button label
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueText;
+
+  /// The conventional getting things ready label
+  ///
+  /// In en, this message translates to:
+  /// **'Getting things ready...'**
+  String get gettingThingsReady;
+
+  /// The conventional nearby taxis label
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby Taxis'**
+  String get nearbyTaxis;
 }
 
 class _AppLocalizationsDelegate

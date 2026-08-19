@@ -23,5 +23,85 @@
     "runsOn": "Runs on",
     "@runsOn": {
         "description": "The conventional runs on label"
+    },
+    "locationPermissions": "Location Permissions",
+    "@locationPermissions": {
+        "description": "The conventional location permissions label"
+    },
+    "locationPermissionsDescription": "HambaGo requires location permissions to function properly. Please grant the necessary permissions.",
+    "@locationPermissionsDescription": {
+        "description": "The conventional location permissions description"
+    },
+    "howLocationDataIsUsed": "How location data is used",
+    "@howLocationDataIsUsed": {
+        "description": "The conventional how location data is used label"
+    },
+    "locationDataUsageDescription": "HambaGo uses your location data to provide accurate ride matching and navigation services. Your location data is not shared with third parties without your consent.",
+    "@locationDataUsageDescription": {
+        "description": "The conventional location data usage description"
+    },
+    "howLocationDataIsStored": "How location data is stored",
+    "@howLocationDataIsStored": {
+        "description": "The conventional how location data is stored label"
+    },
+    "locationDataStorageDescription": "HambaGo does not store your location data.",
+    "@locationDataStorageDescription": {
+        "description": "The conventional location data storage description"
+    },
+    "allowLocationAccess": "Allow location access",
+    "@allowLocationAccess": {
+        "description": "The conventional allow location access button label"
+    },
+    "locationAccessDenied": "Location access denied",
+    "@locationAccessDenied": {
+        "description": "The conventional location access denied label"
+    },
+    "locationAccessDeniedDescription": "HambaGo requires location access to function properly. Please grant the necessary permissions in your device settings.",
+    "@locationAccessDeniedDescription": {
+        "description": "The conventional location access denied description"
+    },
+    "goToSettings": "Go to settings",
+    "@goToSettings": {
+        "description": "The conventional go to settings button label"
+    },
+    "accessToLocation": "Access to location",
+    "@accessToLocation": {
+        "description": "The conventional access to location label"
+    },
+    "howYouCanUseLocationServices": "How you can use location services",
+    "@howYouCanUseLocationServices": {
+        "description": "The conventional how you can use location services label"
+    },
+    "howToUseLocationServicesDescription": "Turning on your device location allows you to share your location, which is necessary for HambaGo to provide accurate ride matching and navigation services.",
+    "@howToUseLocationServicesDescription": {
+        "description": "The conventional how to use location services description"
+    },
+    "howWellUseLocationServices": "How we'll use location services",
+    "@howWellUseLocationServices": {
+        "description": "The conventional how we'll use location services label"
+    },
+    "howWellUseLocationServicesDescription": "We'll do things like show you where your driver is, and help you find your way to your destination. We won't share your location with anyone else without your permission.",
+    "@howWellUseLocationServicesDescription": {
+        "description": "The conventional how we'll use location services description"
+    },
+    "howYouCanControlThis": "How you can control this",
+    "@howYouCanControlThis": {
+        "description": "The conventional how you can control this label"
+    },
+    "howYouCanControlThisDescription": "You can turn off location services at any time in your device settings. You can also choose to share your location with HambaGo only when you're using the app.",
+    "@howYouCanControlThisDescription": {
+        "description": "The conventional how you can control this description"
+    },
+    "continueText": "Continue",
+    "@continueText": {
+        "description": "The conventional continue button label"
+    },
+    "gettingThingsReady": "Getting things ready...",
+    "@gettingThingsReady": {
+        "description": "The conventional getting things ready label"
+    },
+    "nearbyTaxis": "Nearby Taxis",
+    "@nearbyTaxis": {
+        "description": "The conventional nearby taxis label"
     }
 }
