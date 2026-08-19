@@ -10,4 +10,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helloWorld => 'Hello World!';
+
+  @override
+  String get from => 'From';
+
+  @override
+  String get to => 'To';
+
+  @override
+  String get fare => 'Fare';
+
+  @override
+  String get provider => 'Provider';
+
+  @override
+  String get runsOn => 'Runs on';
 }

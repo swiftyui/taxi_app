@@ -1,6 +1,7 @@
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
+import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_item_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -37,7 +38,10 @@ class LandingBottomSheet extends StatelessWidget {
           padding: EdgeInsets.zero,
           child: Column(
             children: [
-              _dragHandle.paddingOnly(top: Dimensions.sixteen),
+              _dragHandle.paddingOnly(
+                top: Dimensions.sixteen,
+                bottom: Dimensions.eight,
+              ),
               _taxiRoutesProvider.taxiRoutes.isEmpty
                   ? const Center(
                       child: Padding(
@@ -49,23 +53,10 @@ class LandingBottomSheet extends StatelessWidget {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _taxiRoutesProvider.taxiRoutes.length,
-                      itemBuilder: (context, index) {
-                        final route = _taxiRoutesProvider.taxiRoutes[index];
-                        return Container(
-                          child:
-                              Row(
-                                children: [
-                                  Text(route.properties.originname),
-                                  Text(' → '),
-                                  Text(route.properties.destname),
-                                ],
-                              ).paddingOnly(
-                                bottom: Dimensions.eight,
-                                left: Dimensions.sixteen,
-                                right: Dimensions.sixteen,
-                              ),
-                        );
-                      },
+                      padding: EdgeInsets.zero,
+                      itemBuilder: (context, index) => NearbyTaxiItemWidget(
+                        route: _taxiRoutesProvider.taxiRoutes[index],
+                      ).paddingAll(Dimensions.four),
                     ),
             ],
           ),

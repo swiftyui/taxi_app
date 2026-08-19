@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 abstract class Colours {
+  static const primaryOne = Color(0xFFc68425);
+  static const primaryTwo = Color(0xFFa04d31);
+  static const primaryThree = Color(0xFF676a4b);
+  static const primaryFour = Color(0xFF4c4c4c);
+
   /// `Theme` Colors used
   static const surface = Color(0xFF08171d);
   static const secondary = Color.fromARGB(255, 65, 106, 88);

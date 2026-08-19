@@ -99,6 +99,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hello World!'**
   String get helloWorld;
+
+  /// The conventional from label
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get from;
+
+  /// The conventional to label
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get to;
+
+  /// The conventional fare label
+  ///
+  /// In en, this message translates to:
+  /// **'Fare'**
+  String get fare;
+
+  /// The conventional provider label
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get provider;
+
+  /// The conventional runs on label
+  ///
+  /// In en, this message translates to:
+  /// **'Runs on'**
+  String get runsOn;
 }
 
 class _AppLocalizationsDelegate

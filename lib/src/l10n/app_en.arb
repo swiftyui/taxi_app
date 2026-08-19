@@ -3,5 +3,25 @@
     "helloWorld": "Hello World!",
     "@helloWorld": {
         "description": "The conventional newborn programmer greeting"
+    },
+    "from": "From",
+    "@from": {
+        "description": "The conventional from label"
+    },
+    "to": "To",
+    "@to": {
+        "description": "The conventional to label"
+    },
+    "fare": "Fare",
+    "@fare": {
+        "description": "The conventional fare label"
+    },
+    "provider": "Provider",
+    "@provider": {
+        "description": "The conventional provider label"
+    },
+    "runsOn": "Runs on",
+    "@runsOn": {
+        "description": "The conventional runs on label"
     }
 }
