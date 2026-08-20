@@ -103,5 +103,17 @@
     "nearbyTaxis": "Nearby Taxis",
     "@nearbyTaxis": {
         "description": "The conventional nearby taxis label"
+    },
+    "spotsAvailable": "Spots available",
+    "@spotsAvailable": {
+        "description": "The conventional spots available label"
+    },
+    "numberOfSeats": "Number of seats",
+    "@numberOfSeats": {
+        "description": "The conventional number of seats label"
+    },
+    "searchNearbyRoutes": "Search nearby routes",
+    "@searchNearbyRoutes": {
+        "description": "The conventional search nearby routes label"
     }
 }

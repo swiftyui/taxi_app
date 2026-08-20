@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/widgets/loaders/generic_loader.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_bottom_sheet.dart';
+import 'package:TaxiApp/src/features/landing/screens/landing_search_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/state_manager.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -60,6 +61,7 @@ class _LandingScreenState extends State<LandingScreen> {
               },
               zoomControlsEnabled: false,
             ),
+            LandingSearchBar(),
             LandingBottomSheet(),
           ],
         ),

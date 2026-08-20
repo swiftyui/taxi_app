@@ -93,4 +93,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nearbyTaxis => 'Nearby Taxis';
+
+  @override
+  String get spotsAvailable => 'Spots available';
+
+  @override
+  String get numberOfSeats => 'Number of seats';
+
+  @override
+  String get searchNearbyRoutes => 'Search nearby routes';
 }

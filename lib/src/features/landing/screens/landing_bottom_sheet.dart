@@ -24,7 +24,7 @@ class LandingBottomSheet extends StatelessWidget {
     builder: (context, scrollController) => Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colours.charcoal,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(Dimensions.sixteen),
         ),
@@ -51,7 +51,7 @@ class LandingBottomSheet extends StatelessWidget {
               Text(
                 Get.appLocalizations.nearbyTaxis,
                 style: Get.textTheme.labelLarge?.copyWith(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ).paddingOnly(bottom: Dimensions.eight, left: Dimensions.eight),

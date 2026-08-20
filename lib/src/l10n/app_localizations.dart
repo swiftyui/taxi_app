@@ -249,6 +249,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nearby Taxis'**
   String get nearbyTaxis;
+
+  /// The conventional spots available label
+  ///
+  /// In en, this message translates to:
+  /// **'Spots available'**
+  String get spotsAvailable;
+
+  /// The conventional number of seats label
+  ///
+  /// In en, this message translates to:
+  /// **'Number of seats'**
+  String get numberOfSeats;
+
+  /// The conventional search nearby routes label
+  ///
+  /// In en, this message translates to:
+  /// **'Search nearby routes'**
+  String get searchNearbyRoutes;
 }
 
 class _AppLocalizationsDelegate

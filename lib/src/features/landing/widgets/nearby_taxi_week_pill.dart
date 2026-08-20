@@ -17,7 +17,7 @@ class NearbyTaxiWeekPill extends StatelessWidget {
     children: [
       Text(
         Get.appLocalizations.runsOn,
-        style: Get.textTheme.labelMedium,
+        style: Get.textTheme.labelMedium?.copyWith(color: Colors.white),
       ).paddingOnly(bottom: Dimensions.four),
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
