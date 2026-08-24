@@ -115,5 +115,9 @@
     "searchNearbyRoutes": "Search nearby routes",
     "@searchNearbyRoutes": {
         "description": "The conventional search nearby routes label"
+    },
+    "viewRoute": "View Route",
+    "@viewRoute": {
+        "description": "The conventional view route button label"
     }
 }

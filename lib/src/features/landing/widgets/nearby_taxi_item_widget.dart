@@ -15,74 +15,56 @@ class NearbyTaxiItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(2),
-    decoration: BoxDecoration(
-      color: Colours.primaryOne,
-      borderRadius: BorderRadius.circular(Dimensions.eight),
-    ),
+    padding: const EdgeInsets.only(bottom: Dimensions.eight),
+    decoration: const BoxDecoration(color: Colours.containerOne),
     child: Container(
-      padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
-        color: Colours.primaryTwo,
-        borderRadius: BorderRadius.circular(Dimensions.eight),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: Colours.primaryThree,
-          borderRadius: BorderRadius.circular(Dimensions.eight),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            color: Colours.primaryFour,
-            borderRadius: BorderRadius.circular(Dimensions.eight),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 2,
+            spreadRadius: 2,
+            offset: const Offset(0, 2),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colours.charcoal,
-              borderRadius: BorderRadius.circular(Dimensions.eight),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildValueItem(
-                      label: Get.appLocalizations.from,
-                      value: route.originName,
-                    ).paddingOnly(bottom: Dimensions.eight),
-                    _buildValueItem(
-                      label: Get.appLocalizations.to,
-                      value: route.destinationName,
-                    ).paddingOnly(bottom: Dimensions.eight),
-                    _buildValueItem(
-                      label: Get.appLocalizations.fare,
-                      value:
-                          'R${route.model.properties.fare.toStringAsFixed(2)}',
-                    ).paddingOnly(bottom: Dimensions.eight),
-                    _buildValueItem(
-                      label: Get.appLocalizations.provider,
-                      value: route.model.properties.assocname,
-                    ).paddingOnly(bottom: Dimensions.eight),
-                    NearbyTaxiWeekPill(
-                      dayOfWeek: DayOfWeek.fromValue(
-                        route.model.properties.dayofweek,
-                      ),
-                    ),
-                    NearbyTaxiSpotsAvailable(
-                      route: route,
-                    ).paddingOnly(top: Dimensions.eight),
-                  ],
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildValueItem(
+                label: Get.appLocalizations.from,
+                value: route.originName,
+              ).paddingOnly(bottom: Dimensions.eight),
+              _buildValueItem(
+                label: Get.appLocalizations.to,
+                value: route.destinationName,
+              ).paddingOnly(bottom: Dimensions.eight),
+              _buildValueItem(
+                label: Get.appLocalizations.fare,
+                value: 'R${route.model.properties.fare.toStringAsFixed(2)}',
+              ).paddingOnly(bottom: Dimensions.eight),
+              _buildValueItem(
+                label: Get.appLocalizations.provider,
+                value: route.model.properties.assocname,
+              ).paddingOnly(bottom: Dimensions.eight),
+              NearbyTaxiWeekPill(
+                dayOfWeek: DayOfWeek.fromValue(
+                  route.model.properties.dayofweek,
                 ),
-              ],
-            ).paddingAll(Dimensions.eight),
+              ),
+              NearbyTaxiSpotsAvailable(
+                route: route,
+              ).paddingOnly(top: Dimensions.eight),
+            ],
           ),
-        ),
-      ),
+        ],
+      ).paddingAll(Dimensions.eight),
     ),
   );
 
@@ -93,13 +75,13 @@ class NearbyTaxiItemWidget extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Get.textTheme.labelMedium?.copyWith(color: Colors.white),
+            style: Get.textTheme.labelMedium?.copyWith(color: Colors.black),
           ),
           Text(
             value,
             style: Get.textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.black,
             ),
           ),
         ],

@@ -102,4 +102,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchNearbyRoutes => 'Search nearby routes';
+
+  @override
+  String get viewRoute => 'View Route';
 }

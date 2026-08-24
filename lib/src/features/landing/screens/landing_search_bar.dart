@@ -1,6 +1,4 @@
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
-import 'package:TaxiApp/src/core/theme/app_visual_density.dart';
-import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -24,7 +22,7 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
             width: double.infinity,
             height: _searchBarHeight,
             decoration: BoxDecoration(
-              color: Colours.charcoal,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(99),
               boxShadow: [
                 BoxShadow(
@@ -38,13 +36,13 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
               children: [
                 const Icon(
                   Icons.location_on,
-                  color: Colors.white,
+                  color: Colors.black,
                 ).paddingOnly(right: Dimensions.eight),
                 Expanded(
                   child: Text(
                     Get.appLocalizations.searchNearbyRoutes,
                     style: Get.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                   ),
                 ),

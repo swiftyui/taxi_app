@@ -1,18 +1,20 @@
+import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
+import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/loaders/generic_loader.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_item_widget.dart';
+import 'package:TaxiApp/src/features/landing/widgets/selected_route_details_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-// -25.790897377907932, 28.319562183317874
-// 37,785834, -122,406417
 class LandingBottomSheet extends StatelessWidget {
   LandingBottomSheet({super.key});
 
   final TaxiRoutesProvider _taxiRoutesProvider = TaxiRoutesProvider.create();
+  final ActionsProvider _actionsProvider = ActionsProvider.create();
 
   @override
   Widget build(BuildContext context) => DraggableScrollableSheet(
@@ -24,7 +26,7 @@ class LandingBottomSheet extends StatelessWidget {
     builder: (context, scrollController) => Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colours.charcoal,
+        color: Colors.white,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(Dimensions.sixteen),
         ),
@@ -48,24 +50,8 @@ class LandingBottomSheet extends StatelessWidget {
               Center(
                 child: _dragHandle,
               ).paddingOnly(top: Dimensions.sixteen, bottom: Dimensions.eight),
-              Text(
-                Get.appLocalizations.nearbyTaxis,
-                style: Get.textTheme.labelLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ).paddingOnly(bottom: Dimensions.eight, left: Dimensions.eight),
-              _taxiRoutesProvider.nearbyRoutes.isEmpty
-                  ? const GenericLoader()
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _taxiRoutesProvider.nearbyRoutes.length,
-                      padding: EdgeInsets.zero,
-                      itemBuilder: (context, index) => NearbyTaxiItemWidget(
-                        route: _taxiRoutesProvider.nearbyRoutes[index],
-                      ).paddingAll(Dimensions.four),
-                    ),
+
+              _buildBottomSheetContent,
             ],
           ),
         ),
@@ -81,4 +67,37 @@ class LandingBottomSheet extends StatelessWidget {
       borderRadius: BorderRadius.circular(2),
     ),
   );
+
+  Widget get _buildBottomSheetContent {
+    switch (_actionsProvider.selectedAction.value) {
+      case ActionType.selectedLocation:
+      case ActionType.viewRoute:
+        return const SelectedRouteDetailsWidget();
+      default:
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              Get.appLocalizations.nearbyTaxis,
+              style: Get.textTheme.bodyMedium?.copyWith(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ).paddingOnly(bottom: Dimensions.eight, left: Dimensions.eight),
+            _taxiRoutesProvider.nearbyRoutes.isEmpty
+                ? const GenericLoader()
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _taxiRoutesProvider.nearbyRoutes.length,
+                    padding: EdgeInsets.zero,
+                    itemBuilder: (context, index) => NearbyTaxiItemWidget(
+                      route: _taxiRoutesProvider.nearbyRoutes[index],
+                    ),
+                  ),
+          ],
+        );
+    }
+  }
 }

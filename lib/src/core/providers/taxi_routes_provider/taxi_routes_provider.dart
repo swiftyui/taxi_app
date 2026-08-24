@@ -1,6 +1,7 @@
 // https://pta-gis-2-web1.csir.co.za/server2/rest/services/Hosted/Tshwane_Taxi_Routes_shp/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson
 import 'dart:convert';
 
+import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/nearby_taxi_route_model.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/taxi_route_model.dart';
 import 'package:get/get.dart';
@@ -9,10 +10,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class TaxiRoutesProvider extends GetxController {
+  TaxiRoutesProvider(this._mapsProvider);
   static TaxiRoutesProvider create() => Get.isRegistered<TaxiRoutesProvider>()
       ? Get.find<TaxiRoutesProvider>()
-      : Get.put<TaxiRoutesProvider>(TaxiRoutesProvider());
+      : Get.put<TaxiRoutesProvider>(TaxiRoutesProvider(MapsProvider.create()));
 
+  final MapsProvider _mapsProvider;
   final RxList<TaxiRouteParent> _taxiRoutesFeature = <TaxiRouteParent>[].obs;
   final RxList<TaxiRouteModel> taxiRoutes = <TaxiRouteModel>[].obs;
   final RxList<NearbyTaxiRouteModel> nearbyRoutes =
@@ -58,6 +61,14 @@ class TaxiRoutesProvider extends GetxController {
 
       // Find nearby routes
       await _findNearbyRoutes(userLocation.value!);
+      _mapsProvider.updateMarkers();
+      _mapsProvider.initialCameraPosition.value = CameraPosition(
+        target: LatLng(
+          userLocation.value!.latitude,
+          userLocation.value!.longitude,
+        ),
+        zoom: 14.0,
+      );
     } catch (e) {
       print('Error fetching Pretoria Taxi Routes: $e');
     } finally {
