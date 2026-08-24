@@ -1,6 +1,8 @@
+import 'package:TaxiApp/src/core/enums/image_list.dart';
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 
 class LandingSearchBar extends StatefulWidget {
@@ -34,9 +36,10 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.location_on,
-                  color: Colors.black,
+                SvgPicture.asset(
+                  ImageList.taxiIcon,
+                  width: 36,
+                  height: 36,
                 ).paddingOnly(right: Dimensions.eight),
                 Expanded(
                   child: Text(

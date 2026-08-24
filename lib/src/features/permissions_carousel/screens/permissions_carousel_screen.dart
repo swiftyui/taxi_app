@@ -27,12 +27,12 @@ class PermissionsCarouselScreen extends StatelessWidget {
           () => Scaffold(
             appBar: CustomAppBar(
               backButton: false,
-              textColor: Colours.primaryTwo,
+              textColor: Colours.blueThree,
               bottom: TabBar(
                 padding: EdgeInsets.zero,
                 labelPadding: EdgeInsets.zero,
                 indicatorPadding: EdgeInsets.zero,
-                indicatorColor: Colours.primaryTwo,
+                indicatorColor: Colours.blueThree,
                 tabs: permissionsCarouselProvider.permissions
                     .map(
                       (item) => Tab(
@@ -40,7 +40,7 @@ class PermissionsCarouselScreen extends StatelessWidget {
                         child: Text(
                           permissionsCarouselProvider.permissions.first.title,
                           style: Get.textTheme.labelLarge?.copyWith(
-                            color: Colours.primaryTwo,
+                            color: Colours.blueThree,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -78,7 +78,7 @@ class PermissionsCarouselScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colours.primaryTwo.withValues(alpha: 0.6),
+                      color: Colours.blueThree.withValues(alpha: 0.6),
                       blurRadius: 5,
                       offset: const Offset(0, 3),
                     ),
@@ -138,12 +138,12 @@ class PermissionsCarouselScreen extends StatelessWidget {
     if (item.status != PermissionStatus.granted) {
       return PrimaryButton(
         text: Get.appLocalizations.continueText,
-        borderColor: Colours.primaryTwo,
+        borderColor: Colours.blueThree,
         buttonColor: Colors.white,
-        textColor: Colours.primaryTwo,
+        textColor: Colours.blueThree,
         textStyle: Get.textTheme.labelLarge?.copyWith(
           fontWeight: FontWeight.bold,
-          color: Colours.primaryTwo,
+          color: Colours.blueThree,
         ),
         borderRadius: BorderRadius.circular(Dimensions.four),
         onTap: () async {
@@ -158,12 +158,12 @@ class PermissionsCarouselScreen extends StatelessWidget {
     } else {
       return PrimaryButton(
         text: Get.appLocalizations.goToSettings,
-        borderColor: Colours.primaryTwo,
+        borderColor: Colours.blueThree,
         buttonColor: Colors.white,
-        textColor: Colours.primaryTwo,
+        textColor: Colours.blueThree,
         textStyle: Get.textTheme.labelLarge?.copyWith(
           fontWeight: FontWeight.bold,
-          color: Colours.primaryTwo,
+          color: Colours.blueThree,
         ),
         borderRadius: BorderRadius.circular(Dimensions.four),
         onTap: () async {
@@ -181,10 +181,7 @@ class PermissionsCarouselScreen extends StatelessWidget {
     mainAxisAlignment: MainAxisAlignment.start,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(
-        icon,
-        color: Colours.primaryTwo,
-      ).paddingOnly(right: Dimensions.eight),
+      Icon(icon, color: Colours.blueThree).paddingOnly(right: Dimensions.eight),
       Expanded(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,

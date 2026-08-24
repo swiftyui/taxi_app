@@ -60,7 +60,7 @@ class CustomAppBar extends AppBar {
                              titleText == null && titleWidget == null
                                  ? Text(
                                      'HambaGo',
-                                     style: GoogleFonts.barriecito().copyWith(
+                                     style: GoogleFonts.pacifico().copyWith(
                                        color:
                                            textColor ??
                                            Get.theme.colorScheme.onSurface,
@@ -72,7 +72,7 @@ class CustomAppBar extends AppBar {
                                        Expanded(
                                          child: Text(
                                            titleText ?? '',
-                                           style: GoogleFonts.barriecito()
+                                           style: GoogleFonts.pacifico()
                                                .copyWith(
                                                  color:
                                                      textColor ??
@@ -97,7 +97,7 @@ class CustomAppBar extends AppBar {
                              titleText == null && titleWidget == null
                                  ? Text(
                                      'HambaGo',
-                                     style: GoogleFonts.barriecito().copyWith(
+                                     style: GoogleFonts.pacifico().copyWith(
                                        color: textColor ?? Colors.white,
                                        fontSize: FontSize.twentyFour,
                                        fontWeight: FontWeight.w100,
@@ -107,7 +107,7 @@ class CustomAppBar extends AppBar {
                                        Expanded(
                                          child: Text(
                                            titleText ?? '',
-                                           style: GoogleFonts.barriecito()
+                                           style: GoogleFonts.pacifico()
                                                .copyWith(
                                                  color:
                                                      textColor ??

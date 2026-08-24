@@ -25,7 +25,7 @@ class GenericLoader extends StatelessWidget {
       ).paddingOnly(bottom: Dimensions.sixteen),
       Text(
         Get.appLocalizations.gettingThingsReady,
-        style: GoogleFonts.barriecito().copyWith(
+        style: GoogleFonts.pacifico().copyWith(
           color: Colours.charcoal,
           fontSize: FontSize.twentyFour,
           fontWeight: FontWeight.w100,

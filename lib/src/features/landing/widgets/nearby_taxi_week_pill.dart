@@ -26,7 +26,7 @@ class NearbyTaxiWeekPill extends StatelessWidget {
             final isSelected = day == dayOfWeek;
             return Container(
               decoration: BoxDecoration(
-                color: isSelected ? Colours.primaryOne : Colors.grey[300],
+                color: isSelected ? Colours.blueThree : Colors.grey[300],
                 borderRadius: BorderRadius.circular(Dimensions.four),
               ),
               child:

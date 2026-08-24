@@ -114,7 +114,7 @@ class _SelectedRouteDetailsWidgetState
     child: Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colours.primaryOne,
+        color: Colours.blueThree,
         borderRadius: BorderRadius.circular(Dimensions.four),
       ),
       child: Row(
