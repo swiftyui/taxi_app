@@ -1,9 +1,12 @@
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
+import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/loaders/generic_loader.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_bottom_sheet.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_search_bar.dart';
+import 'package:TaxiApp/src/features/landing/widgets/my_location_button.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get/state_manager.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -36,6 +39,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 compassEnabled: true,
                 markers: _mapsProvider.markers,
                 myLocationButtonEnabled: true,
+                myLocationEnabled: true,
                 trafficEnabled: true,
                 buildingsEnabled: true,
                 indoorViewEnabled: true,
@@ -45,7 +49,26 @@ class _LandingScreenState extends State<LandingScreen> {
                 zoomControlsEnabled: false,
               ),
             ),
-            const LandingSearchBar(),
+            Align(
+              alignment: Alignment.topCenter,
+              child: SafeArea(
+                child:
+                    Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Expanded(child: LandingSearchBar()),
+                        MyLocationButton().paddingOnly(left: Dimensions.eight),
+                      ],
+                    ).paddingOnly(
+                      left: Dimensions.sixteen,
+                      right: Dimensions.sixteen,
+                      top: Dimensions.sixteen,
+                    ),
+              ),
+            ),
+
             LandingBottomSheet(),
           ],
         ),

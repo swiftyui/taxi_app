@@ -119,5 +119,9 @@
     "viewRoute": "View Route",
     "@viewRoute": {
         "description": "The conventional view route button label"
+    },
+    "searchHere": "Search here",
+    "@searchHere": {
+        "description": "The conventional search here button label"
     }
 }

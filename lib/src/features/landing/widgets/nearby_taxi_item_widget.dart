@@ -18,17 +18,7 @@ class NearbyTaxiItemWidget extends StatelessWidget {
     padding: const EdgeInsets.only(bottom: Dimensions.eight),
     decoration: const BoxDecoration(color: Colours.containerOne),
     child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 2,
-            spreadRadius: 2,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: const BoxDecoration(color: Colors.white),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,

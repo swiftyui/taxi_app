@@ -1,6 +1,7 @@
 import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
+import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -31,15 +32,11 @@ class MapsProvider extends GetxController {
     final TaxiRoutesProvider taxiRoutesProvider = TaxiRoutesProvider.create();
     Set<Marker> newMarkers;
     Set<Polyline> newPolylines;
-    print(
-      'Updating markers and polylines based on selected action: ${actionsProvider.selectedAction.value}',
-    );
 
     switch (actionsProvider.selectedAction.value) {
       case ActionType.viewRoute:
         try {
           final route = actionsProvider.selectedRoute.value;
-          print('Selected route for viewing: ${route?.routeId}');
 
           if (route == null) {
             newMarkers = <Marker>{};
@@ -69,10 +66,8 @@ class MapsProvider extends GetxController {
               width: 5,
             ),
           };
-          print('New polylines: $newPolylines');
           break;
         } catch (e) {
-          print('Error creating markers or polylines for viewRoute: $e');
           newMarkers = <Marker>{};
           newPolylines = <Polyline>{};
         }
@@ -83,8 +78,9 @@ class MapsProvider extends GetxController {
             Marker(
               markerId: MarkerId(route.routeId),
               position: route.originPoint,
-              onTap: () {
+              onTap: () async {
                 actionsProvider.setSelectedRoute(route);
+                actionsProvider.viewRoute(route);
               },
             ),
         };
@@ -146,6 +142,25 @@ class MapsProvider extends GetxController {
       CameraUpdate.newLatLngBounds(
         LatLngBounds(southwest: southwest, northeast: northeast),
         100.0,
+      ),
+    );
+  }
+
+  Future<void> moveToMyLocation() async {
+    final UserLocationProvider userLocationProvider =
+        UserLocationProvider.create();
+    final controller = mapController.value;
+
+    if (controller == null) {
+      return;
+    }
+    controller.animateCamera(
+      CameraUpdate.newLatLngZoom(
+        LatLng(
+          userLocationProvider.userLocation.value!.latitude,
+          userLocationProvider.userLocation.value!.longitude,
+        ),
+        14.0,
       ),
     );
   }

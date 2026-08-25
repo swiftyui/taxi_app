@@ -1,11 +1,13 @@
 import 'package:TaxiApp/src/core/routes/permissions_middleware.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_screen.dart';
 import 'package:TaxiApp/src/features/permissions_carousel/screens/permissions_carousel_screen.dart';
+import 'package:TaxiApp/src/features/search_routes/screens/search_routes_screen.dart';
 import 'package:get/get.dart';
 
 enum AppRoutes {
   root('/'),
-  permissionsCarousel('/permissions-carousel');
+  permissionsCarousel('/permissions-carousel'),
+  searchRoutes('/search-routes');
 
   const AppRoutes(this.value);
 
@@ -24,4 +26,5 @@ final pages = [
     name: AppRoutes.permissionsCarousel.value,
     page: () => PermissionsCarouselScreen(),
   ),
+  GetPage(name: AppRoutes.searchRoutes.value, page: () => SearchRoutesScreen()),
 ];

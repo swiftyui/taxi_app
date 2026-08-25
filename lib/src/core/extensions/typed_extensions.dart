@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 extension NullableStringX on String? {
   bool get isNullOrEmpty => this?.isEmpty ?? true;
@@ -67,4 +68,14 @@ extension ColorExtension on Color {
     );
     return lightenedHsl.toColor();
   }
+}
+
+extension VoidCallbackExtension on Widget {
+  Widget onTap(VoidCallback onTap) => GestureDetector(
+    onTap: () async {
+      HapticFeedback.mediumImpact();
+      onTap();
+    },
+    child: this,
+  );
 }

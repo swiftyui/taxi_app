@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/nearby_taxi_route_model.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/taxi_route_model.dart';
+import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart';
 import 'package:geolocator/geolocator.dart';
@@ -20,7 +21,6 @@ class TaxiRoutesProvider extends GetxController {
   final RxList<TaxiRouteModel> taxiRoutes = <TaxiRouteModel>[].obs;
   final RxList<NearbyTaxiRouteModel> nearbyRoutes =
       <NearbyTaxiRouteModel>[].obs;
-  final Rxn<Position> userLocation = Rxn<Position>();
   final RxBool isLoading = false.obs;
 
   @override
@@ -52,20 +52,22 @@ class TaxiRoutesProvider extends GetxController {
       _taxiRoutesFeature.value = [taxiRoutesData];
       taxiRoutes.value = taxiRoutesData.features;
 
-      // Get user's current location
-      userLocation.value = await _getCurrentLocation();
+      final UserLocationProvider userLocationProvider =
+          UserLocationProvider.create();
 
-      if (userLocation.value == null) {
-        return;
+      // Get user's current location
+
+      while (userLocationProvider.userLocation.value == null) {
+        await Future.delayed(const Duration(milliseconds: 100));
       }
 
       // Find nearby routes
-      await _findNearbyRoutes(userLocation.value!);
+      await _findNearbyRoutes(userLocationProvider.userLocation.value!);
       _mapsProvider.updateMarkers();
       _mapsProvider.initialCameraPosition.value = CameraPosition(
         target: LatLng(
-          userLocation.value!.latitude,
-          userLocation.value!.longitude,
+          userLocationProvider.userLocation.value!.latitude,
+          userLocationProvider.userLocation.value!.longitude,
         ),
         zoom: 14.0,
       );
@@ -133,31 +135,5 @@ class TaxiRoutesProvider extends GetxController {
         ),
       );
     }
-  }
-
-  Future<Position?> _getCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-
-    if (!serviceEnabled) {
-      return null;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-
-      if (permission == LocationPermission.denied) {
-        return null;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return null;
-    }
-
-    return Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-    );
   }
 }

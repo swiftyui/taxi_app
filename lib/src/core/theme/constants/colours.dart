@@ -9,6 +9,7 @@ abstract class Colours {
   static const blueOne = Color(0xFF5e9ddb);
   static const blueTwo = Color(0xFF86ceed);
   static const blueThree = Color.fromARGB(255, 11, 84, 112);
+  static const searchBarBackground = Color.fromARGB(255, 240, 240, 240);
 
   /// `Theme` Colors used
   static const surface = Color(0xFF08171d);

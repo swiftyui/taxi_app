@@ -273,6 +273,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View Route'**
   String get viewRoute;
+
+  /// The conventional search here button label
+  ///
+  /// In en, this message translates to:
+  /// **'Search here'**
+  String get searchHere;
 }
 
 class _AppLocalizationsDelegate
