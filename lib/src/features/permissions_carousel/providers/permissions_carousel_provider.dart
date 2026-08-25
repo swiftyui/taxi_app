@@ -40,7 +40,7 @@ class PermissionsCarouselProvider extends GetxController with RxWorkerMixin {
               status: status,
               title: Get.appLocalizations.accessToLocation,
               description: Get.appLocalizations.locationPermissionsDescription,
-              imageAssetPath: ImageList.taxiIcon,
+              imageAssetPath: ImageList.appLogo,
             ),
           );
           break;

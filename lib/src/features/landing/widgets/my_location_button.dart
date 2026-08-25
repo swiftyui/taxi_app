@@ -26,7 +26,7 @@ class MyLocationButton extends StatelessWidget {
         ),
         child: const Icon(
           Icons.pin_drop_rounded,
-          color: Colours.blueThree,
+          color: Colours.primaryOne,
           size: 24,
         ).paddingAll(Dimensions.twelve),
       ).onTap(() {

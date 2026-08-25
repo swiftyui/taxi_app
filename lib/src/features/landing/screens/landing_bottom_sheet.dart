@@ -7,6 +7,7 @@ import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/loaders/generic_loader.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_item_widget.dart';
 import 'package:TaxiApp/src/features/landing/widgets/selected_route_details_widget.dart';
+import 'package:TaxiApp/src/features/landing/widgets/taxi_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -50,7 +51,7 @@ class LandingBottomSheet extends StatelessWidget {
               Center(
                 child: _dragHandle,
               ).paddingOnly(top: Dimensions.sixteen, bottom: Dimensions.eight),
-
+              TaxiActions(),
               _buildBottomSheetContent,
             ],
           ),

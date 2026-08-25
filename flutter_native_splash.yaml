@@ -2,8 +2,8 @@ flutter_native_splash:
   # dart run flutter_native_splash:create
   # dart run flutter_native_splash:remove
 
-  color: "#ffffff" # Background color for light mode
-  color_dark: "#ffffff" # Background color for dark mode
+  color: "#000000" # Background color for light mode
+  color_dark: "#000000" # Background color for dark mode
   image: assets/images/app_splash_screen.png # Background image for light mode
   image_dark: assets/images/app_splash_screen.png # Background image for dark mode
 

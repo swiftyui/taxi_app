@@ -40,21 +40,15 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
         ),
         child: Obx(
           () => Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SvgPicture.asset(
-                ImageList.taxiIcon,
+                ImageList.locationIcon,
                 width: 36,
                 height: 36,
               ).paddingOnly(right: Dimensions.eight),
-              Expanded(
-                child: Text(
-                  _actionsProvider.selectedRoute.value?.destinationName ??
-                      Get.appLocalizations.searchNearbyRoutes,
-                  style: Get.textTheme.bodyMedium?.copyWith(
-                    color: Colors.black,
-                  ),
-                ),
-              ),
+              Expanded(child: _textToDisplay),
             ],
           ).paddingOnly(left: Dimensions.eight, right: Dimensions.eight),
         ),
@@ -69,4 +63,34 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
           );
         }
       });
+
+  Widget get _textToDisplay {
+    if (_actionsProvider.selectedRoute.value == null) {
+      return Text(
+        Get.appLocalizations.searchNearbyRoutes,
+        style: Get.textTheme.bodyMedium?.copyWith(color: Colors.black),
+      );
+    } else {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _actionsProvider.selectedRoute.value?.originName ??
+                Get.appLocalizations.searchNearbyRoutes,
+            style: Get.textTheme.labelLarge?.copyWith(color: Colors.black),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            _actionsProvider.selectedRoute.value?.destinationName ??
+                Get.appLocalizations.searchNearbyRoutes,
+            style: Get.textTheme.bodyMedium?.copyWith(color: Colors.black),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      );
+    }
+  }
 }

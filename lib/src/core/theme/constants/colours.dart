@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 
 abstract class Colours {
-  static const primaryOne = Color(0xFFc68425);
-  static const primaryTwo = Color(0xFFa04d31);
-  static const primaryThree = Color(0xFF676a4b);
+  static const primaryOne = Color(0xFF1d2636);
+  static const primaryTwo = Color(0xFF333c4d);
+  static const primaryThree = Color(0xFF252b37);
+  static const onPrimary = Color(0xFFdbdbdb);
+  static const yellow = Color(0xFFfab810);
+  static const red = Color(0xFFc5151a);
+  static const green = Color(0xFF107135);
+  static const blue = Color(0xFF124185);
+
+  // static const primaryOne = Color(0xFFc68425);
+  // static const primaryTwo = Color(0xFFa04d31);
+  // static const primaryThree = Color(0xFF676a4b);
   static const primaryFour = Color(0xFF4c4c4c);
   static const containerOne = Color.fromARGB(255, 182, 192, 194);
   static const blueOne = Color(0xFF5e9ddb);
@@ -57,6 +66,5 @@ abstract class Colours {
   /// `Custom Colors`
   static const hotPink = Color(0xFFff2173);
   static const turquoise = Color(0xFF03bfc3);
-  static const yellow = Color(0xFFffd33b);
   static const facebookBlue = Color(0xFF1977f2);
 }

@@ -7,7 +7,6 @@ import 'package:TaxiApp/src/features/landing/screens/landing_search_bar.dart';
 import 'package:TaxiApp/src/features/landing/widgets/my_location_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/state_manager.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class LandingScreen extends StatefulWidget {
@@ -29,6 +28,7 @@ class _LandingScreenState extends State<LandingScreen> {
       final version = _mapsProvider.mapVersion.value;
       return Scaffold(
         body: Stack(
+          alignment: Alignment.center,
           children: [
             Obx(
               () => GoogleMap(
@@ -68,7 +68,6 @@ class _LandingScreenState extends State<LandingScreen> {
                     ),
               ),
             ),
-
             LandingBottomSheet(),
           ],
         ),
