@@ -279,6 +279,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search here'**
   String get searchHere;
+
+  /// The conventional request a ride button label
+  ///
+  /// In en, this message translates to:
+  /// **'Request a ride'**
+  String get requestARide;
+
+  /// The conventional leave a review button label
+  ///
+  /// In en, this message translates to:
+  /// **'Leave a review'**
+  String get leaveAReview;
 }
 
 class _AppLocalizationsDelegate

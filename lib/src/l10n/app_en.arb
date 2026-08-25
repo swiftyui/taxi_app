@@ -123,5 +123,13 @@
     "searchHere": "Search here",
     "@searchHere": {
         "description": "The conventional search here button label"
+    },
+    "requestARide": "Request a ride",
+    "@requestARide": {
+        "description": "The conventional request a ride button label"
+    },
+    "leaveAReview": "Leave a review",
+    "@leaveAReview": {
+        "description": "The conventional leave a review button label"
     }
 }

@@ -3,3 +3,4 @@
 3. Taxi Features, has wifi, short distance, long distance etc;
 4. Ask Ramon what features he wants in a taxi;
 5. Review a Taxi;
+6. Guided routes, i.e. ek wil Doornpoort toe gaan, maar ek is in Faerie Glen, app moet my die taxi routes wat ek alles moet vat wys;

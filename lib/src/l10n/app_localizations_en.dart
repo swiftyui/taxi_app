@@ -108,4 +108,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchHere => 'Search here';
+
+  @override
+  String get requestARide => 'Request a ride';
+
+  @override
+  String get leaveAReview => 'Leave a review';
 }

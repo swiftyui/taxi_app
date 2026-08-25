@@ -1,3 +1,4 @@
+import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:flutter/material.dart';
@@ -13,9 +14,19 @@ class TaxiActions extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(child: TaxiAction()),
-          const SizedBox(width: Dimensions.four),
-          Expanded(child: TaxiAction()),
+          Expanded(
+            child: TaxiAction(
+              label: Get.appLocalizations.requestARide,
+              icon: Icons.local_taxi_rounded,
+            ),
+          ),
+          const SizedBox(width: Dimensions.eight),
+          Expanded(
+            child: TaxiAction(
+              label: Get.appLocalizations.leaveAReview,
+              icon: Icons.star_rounded,
+            ),
+          ),
         ],
       ).paddingOnly(
         left: Dimensions.eight,
@@ -26,8 +37,9 @@ class TaxiActions extends StatelessWidget {
 }
 
 class TaxiAction extends StatelessWidget {
-  const TaxiAction({super.key});
-
+  const TaxiAction({required this.label, required this.icon, super.key});
+  final String label;
+  final IconData icon;
   static const double _actionHeight = 40;
 
   @override
@@ -37,7 +49,7 @@ class TaxiAction extends StatelessWidget {
       Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(Dimensions.four),
+          borderRadius: BorderRadius.circular(99),
           boxShadow: [
             BoxShadow(
               color: Colours.primaryOne.withValues(alpha: .2),
@@ -46,7 +58,7 @@ class TaxiAction extends StatelessWidget {
             ),
           ],
         ),
-        child: Container(
+        child: SizedBox(
           width: double.infinity,
           height: _actionHeight,
           child: Row(
@@ -74,21 +86,21 @@ class TaxiAction extends StatelessWidget {
                 decoration: const BoxDecoration(color: Colours.blue),
               ),
             ],
-          ),
+          ).paddingOnly(right: Dimensions.sixteen),
         ),
       ),
       Row(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.local_taxi_rounded,
+          Icon(
+            icon,
             color: Colours.primaryOne,
             size: Dimensions.sixteen,
           ).paddingOnly(right: Dimensions.eight),
           Expanded(
             child: Text(
-              'Request a ride',
+              label,
               style: Get.textTheme.labelLarge?.copyWith(
                 color: Colours.primaryOne,
               ),

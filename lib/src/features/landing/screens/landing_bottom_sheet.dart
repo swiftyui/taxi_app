@@ -51,7 +51,6 @@ class LandingBottomSheet extends StatelessWidget {
               Center(
                 child: _dragHandle,
               ).paddingOnly(top: Dimensions.sixteen, bottom: Dimensions.eight),
-              TaxiActions(),
               _buildBottomSheetContent,
             ],
           ),
@@ -79,6 +78,7 @@ class LandingBottomSheet extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            TaxiActions(),
             Text(
               Get.appLocalizations.nearbyTaxis,
               style: Get.textTheme.bodyMedium?.copyWith(
@@ -86,6 +86,7 @@ class LandingBottomSheet extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ).paddingOnly(bottom: Dimensions.eight, left: Dimensions.eight),
+
             _taxiRoutesProvider.nearbyRoutes.isEmpty
                 ? const GenericLoader()
                 : ListView.builder(
