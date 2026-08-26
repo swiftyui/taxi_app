@@ -7,7 +7,6 @@ import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/loaders/generic_loader.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_item_widget.dart';
 import 'package:TaxiApp/src/features/landing/widgets/selected_route_details_widget.dart';
-import 'package:TaxiApp/src/features/landing/widgets/taxi_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -78,7 +77,6 @@ class LandingBottomSheet extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TaxiActions(),
             Text(
               Get.appLocalizations.nearbyTaxis,
               style: Get.textTheme.bodyMedium?.copyWith(
@@ -96,6 +94,14 @@ class LandingBottomSheet extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     itemBuilder: (context, index) => NearbyTaxiItemWidget(
                       route: _taxiRoutesProvider.nearbyRoutes[index],
+                      onTap: () {
+                        _actionsProvider.setSelectedRoute(
+                          _taxiRoutesProvider.nearbyRoutes[index],
+                        );
+                        _actionsProvider.viewRoute(
+                          _taxiRoutesProvider.nearbyRoutes[index],
+                        );
+                      },
                     ),
                   ),
           ],

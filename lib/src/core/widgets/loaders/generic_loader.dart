@@ -1,11 +1,8 @@
-import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
+import 'package:TaxiApp/src/core/enums/image_list.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
-import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
-import 'package:TaxiApp/src/core/theme/constants/font_sizes.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:glowy_borders/glowy_borders.dart';
 
 class GenericLoader extends StatelessWidget {
   const GenericLoader({super.key});
@@ -15,20 +12,36 @@ class GenericLoader extends StatelessWidget {
     mainAxisAlignment: MainAxisAlignment.center,
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
-      SpinKitCircle(
-        itemBuilder: (context, index) => DecoratedBox(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: index.isEven ? Colours.primaryTwo : Colours.primaryThree,
+      Center(
+        child: AnimatedGradientBorder(
+          borderRadius: BorderRadius.circular(999),
+          borderSize: 2,
+          glowSize: 10,
+          gradientColors: [
+            Colours.red,
+            Colours.yellow,
+            Colours.green,
+            Colors.black,
+          ],
+          child: Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colours.primaryOne.withValues(alpha: 0.6),
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: SvgPicture.asset(ImageList.appLogo, fit: BoxFit.contain),
+            ),
           ),
-        ),
-      ).paddingOnly(bottom: Dimensions.sixteen),
-      Text(
-        Get.appLocalizations.gettingThingsReady,
-        style: GoogleFonts.pacifico().copyWith(
-          color: Colours.charcoal,
-          fontSize: FontSize.twentyFour,
-          fontWeight: FontWeight.w100,
         ),
       ),
     ],

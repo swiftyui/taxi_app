@@ -20,13 +20,6 @@ class TaxiActions extends StatelessWidget {
               icon: Icons.local_taxi_rounded,
             ),
           ),
-          const SizedBox(width: Dimensions.eight),
-          Expanded(
-            child: TaxiAction(
-              label: Get.appLocalizations.leaveAReview,
-              icon: Icons.star_rounded,
-            ),
-          ),
         ],
       ).paddingOnly(
         left: Dimensions.eight,
@@ -37,10 +30,16 @@ class TaxiActions extends StatelessWidget {
 }
 
 class TaxiAction extends StatelessWidget {
-  const TaxiAction({required this.label, required this.icon, super.key});
+  const TaxiAction({
+    required this.label,
+    required this.icon,
+    this.onTap,
+    super.key,
+  });
   final String label;
   final IconData icon;
   static const double _actionHeight = 40;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) => Stack(

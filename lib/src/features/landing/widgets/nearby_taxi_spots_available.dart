@@ -17,7 +17,7 @@ class NearbyTaxiSpotsAvailable extends StatelessWidget {
     children: [
       Text(
         '${Get.appLocalizations.numberOfSeats}: ${route.model.properties.noofseats}',
-        style: Get.textTheme.labelMedium?.copyWith(color: Colors.white),
+        style: Get.textTheme.labelMedium?.copyWith(color: Colors.black),
       ).paddingOnly(bottom: Dimensions.four),
       SizedBox(
         width: double.infinity,

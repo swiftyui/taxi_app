@@ -131,5 +131,21 @@
     "leaveAReview": "Leave a review",
     "@leaveAReview": {
         "description": "The conventional leave a review button label"
+    },
+    "moreDetails": "More details",
+    "@moreDetails": {
+        "description": "The conventional more details button label"
+    },
+    "taxiCanBeFoundAt": "Taxi can be found at",
+    "@taxiCanBeFoundAt": {
+        "description": "The conventional taxi can be found at label"
+    },
+    "routeLength": "Route length",
+    "@routeLength": {
+        "description": "The conventional route length label"
+    },
+    "taxiRating": "Taxi rating",
+    "@taxiRating": {
+        "description": "The conventional taxi rating label"
     }
 }

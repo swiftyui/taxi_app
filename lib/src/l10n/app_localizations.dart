@@ -291,6 +291,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Leave a review'**
   String get leaveAReview;
+
+  /// The conventional more details button label
+  ///
+  /// In en, this message translates to:
+  /// **'More details'**
+  String get moreDetails;
+
+  /// The conventional taxi can be found at label
+  ///
+  /// In en, this message translates to:
+  /// **'Taxi can be found at'**
+  String get taxiCanBeFoundAt;
+
+  /// The conventional route length label
+  ///
+  /// In en, this message translates to:
+  /// **'Route length'**
+  String get routeLength;
+
+  /// The conventional taxi rating label
+  ///
+  /// In en, this message translates to:
+  /// **'Taxi rating'**
+  String get taxiRating;
 }
 
 class _AppLocalizationsDelegate

@@ -114,4 +114,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get leaveAReview => 'Leave a review';
+
+  @override
+  String get moreDetails => 'More details';
+
+  @override
+  String get taxiCanBeFoundAt => 'Taxi can be found at';
+
+  @override
+  String get routeLength => 'Route length';
+
+  @override
+  String get taxiRating => 'Taxi rating';
 }
