@@ -147,5 +147,9 @@
     "taxiRating": "Taxi rating",
     "@taxiRating": {
         "description": "The conventional taxi rating label"
+    },
+    "myProfile": "My profile",
+    "@myProfile": {
+        "description": "The conventional my profile label"
     }
 }

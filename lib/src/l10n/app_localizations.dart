@@ -315,6 +315,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Taxi rating'**
   String get taxiRating;
+
+  /// The conventional my profile label
+  ///
+  /// In en, this message translates to:
+  /// **'My profile'**
+  String get myProfile;
 }
 
 class _AppLocalizationsDelegate

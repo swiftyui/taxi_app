@@ -126,4 +126,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taxiRating => 'Taxi rating';
+
+  @override
+  String get myProfile => 'My profile';
 }
