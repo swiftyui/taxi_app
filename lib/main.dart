@@ -38,11 +38,15 @@ Future<void> setupFirebase() async {
 }
 
 void _onErrorReceived(Object error, StackTrace stackTrace) {
-  if (kIsWeb) {
-    if (kDebugMode) {
-      debugPrint('[Web Error] $error');
-      debugPrint('[Web StackTrace] $stackTrace');
-    }
-    return;
+  FlutterError.reportError(
+    FlutterErrorDetails(
+      exception: error,
+      stack: stackTrace,
+      library: 'HambaGo',
+    ),
+  );
+  if (kDebugMode) {
+    debugPrint('[Unhandled Error] $error');
+    debugPrint('[StackTrace] $stackTrace');
   }
 }

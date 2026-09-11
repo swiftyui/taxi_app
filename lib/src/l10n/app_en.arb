@@ -151,5 +151,49 @@
     "myProfile": "My profile",
     "@myProfile": {
         "description": "The conventional my profile label"
+    },
+    "whereDoYouWantToGo": "Where do you want to go?",
+    "@whereDoYouWantToGo": {
+        "description": "Destination search prompt"
+    },
+    "searchDestination": "Search for a destination",
+    "@searchDestination": {
+        "description": "Destination search field hint"
+    },
+    "searchAtLeastThreeCharacters": "Enter at least 3 characters to search.",
+    "@searchAtLeastThreeCharacters": {
+        "description": "Minimum destination search length"
+    },
+    "noDestinationsFound": "No destinations found.",
+    "@noDestinationsFound": {
+        "description": "Empty destination search result"
+    },
+    "planningJourney": "Finding your best available taxi journey...",
+    "@planningJourney": {
+        "description": "Journey planning progress label"
+    },
+    "bestAvailableJourney": "Best available taxi journey",
+    "@bestAvailableJourney": {
+        "description": "Journey summary heading"
+    },
+    "walkingEstimateNotice": "Walking links are straight-line estimates because the current data source does not provide pedestrian directions.",
+    "@walkingEstimateNotice": {
+        "description": "Walking route data limitation"
+    },
+    "startJourney": "Start journey",
+    "@startJourney": {
+        "description": "Start journey button label"
+    },
+    "journeyStarted": "Journey started",
+    "@journeyStarted": {
+        "description": "Active journey button label"
+    },
+    "tryAgain": "Try again",
+    "@tryAgain": {
+        "description": "Retry button label"
+    },
+    "noNearbyRoutes": "No taxi routes were found within 5 km of your current location.",
+    "@noNearbyRoutes": {
+        "description": "Empty nearby taxi routes message"
     }
 }

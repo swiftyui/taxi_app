@@ -15,7 +15,7 @@ class TaxiApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GetMaterialApp(
-    title: 'TaxiApp',
+    title: 'HambaGo',
     debugShowCheckedModeBanner: false,
     theme: _themeSettingsService.lightTheme(),
     darkTheme: _themeSettingsService.darkTheme(),

@@ -2,6 +2,7 @@ import 'package:TaxiApp/src/core/enums/image_list.dart';
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/extensions/rx_worker.dart';
 import 'package:TaxiApp/src/core/routes/routes.dart';
+import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:TaxiApp/src/features/permissions_carousel/models/permission_carousel_item.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -19,11 +20,17 @@ class PermissionsCarouselProvider extends GetxController with RxWorkerMixin {
   @override
   void onInit() {
     super.onInit();
+    everWithDisposal(allPermissionsGranted, (value) {
+      if (value) {
+        Get.offAllNamed(AppRoutes.root.value);
+      }
+    });
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
     _initializePermissions();
-    everWithDisposal(
-      allPermissionsGranted,
-      (value) => Get.toNamed(AppRoutes.root.value),
-    );
   }
 
   Future<void> _initializePermissions() async {
@@ -63,6 +70,7 @@ class PermissionsCarouselProvider extends GetxController with RxWorkerMixin {
 
     if (permissions.every((item) => item.status.isGranted)) {
       allPermissionsGranted.value = true;
+      await UserLocationProvider.create().refreshLocation();
     }
   }
 }

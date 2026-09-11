@@ -321,6 +321,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'My profile'**
   String get myProfile;
+
+  /// Destination search prompt
+  ///
+  /// In en, this message translates to:
+  /// **'Where do you want to go?'**
+  String get whereDoYouWantToGo;
+
+  /// Destination search field hint
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a destination'**
+  String get searchDestination;
+
+  /// Minimum destination search length
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least 3 characters to search.'**
+  String get searchAtLeastThreeCharacters;
+
+  /// Empty destination search result
+  ///
+  /// In en, this message translates to:
+  /// **'No destinations found.'**
+  String get noDestinationsFound;
+
+  /// Journey planning progress label
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your best available taxi journey...'**
+  String get planningJourney;
+
+  /// Journey summary heading
+  ///
+  /// In en, this message translates to:
+  /// **'Best available taxi journey'**
+  String get bestAvailableJourney;
+
+  /// Walking route data limitation
+  ///
+  /// In en, this message translates to:
+  /// **'Walking links are straight-line estimates because the current data source does not provide pedestrian directions.'**
+  String get walkingEstimateNotice;
+
+  /// Start journey button label
+  ///
+  /// In en, this message translates to:
+  /// **'Start journey'**
+  String get startJourney;
+
+  /// Active journey button label
+  ///
+  /// In en, this message translates to:
+  /// **'Journey started'**
+  String get journeyStarted;
+
+  /// Retry button label
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgain;
+
+  /// Empty nearby taxi routes message
+  ///
+  /// In en, this message translates to:
+  /// **'No taxi routes were found within 5 km of your current location.'**
+  String get noNearbyRoutes;
 }
 
 class _AppLocalizationsDelegate

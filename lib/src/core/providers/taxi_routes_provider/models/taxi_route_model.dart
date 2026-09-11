@@ -31,74 +31,73 @@ class TaxiRouteModel {
 }
 
 class TaxiRouteGeometry {
-  TaxiRouteGeometry({required this.type, required this.coordinates});
+  TaxiRouteGeometry({required this.type, required this.parts});
 
   factory TaxiRouteGeometry.fromJson(Map<String, dynamic> json) {
+    final type = json['type'];
     final rawCoordinates = json['coordinates'];
 
+    if (type is! String) {
+      throw FormatException('geometry type is not a String: $type');
+    }
     if (rawCoordinates is! List) {
       throw FormatException(
         'coordinates is not a List: ${rawCoordinates.runtimeType}',
       );
     }
 
-    final coordinates = <List<double>>[];
+    final parts = switch (type) {
+      'LineString' => [_parseLineString(rawCoordinates)],
+      'MultiLineString' =>
+        rawCoordinates.map((part) => _parseLineString(part)).toList(),
+      _ => throw FormatException('Unsupported taxi route geometry: $type'),
+    };
 
-    for (final coordinate in rawCoordinates) {
-      if (coordinate is! List) {
-        throw FormatException(
-          'coordinate is not a List: '
-          '${coordinate.runtimeType} - $coordinate',
-        );
-      }
+    return TaxiRouteGeometry(type: type, parts: parts);
+  }
 
-      final point = <double>[];
-
-      for (final value in coordinate) {
-        if (value is! num) {
-          /// be able to cater for [28.62946062250981, -25.459445018572698]
-          if (value is String) {
-            final parsedValue = double.tryParse(value);
-            if (parsedValue != null) {
-              point.add(parsedValue);
-              continue;
-            }
-          }
-          if (value is List) {
-            for (final v in value) {
-              if (v is num) {
-                point.add(v.toDouble());
-              } else {
-                throw FormatException(
-                  'Coordinate value is not a num: '
-                  '${v.runtimeType} - $v',
-                );
-              }
-            }
-            continue;
-          }
-          throw FormatException(
-            'Coordinate value is not a num: '
-            '${value.runtimeType} - $value',
-          );
-        }
-
-        point.add(value.toDouble());
-      }
-
-      coordinates.add(point);
+  static List<List<double>> _parseLineString(Object? rawCoordinates) {
+    if (rawCoordinates is! List) {
+      throw FormatException(
+        'line coordinates are not a List: ${rawCoordinates.runtimeType}',
+      );
     }
 
-    return TaxiRouteGeometry(
-      type: json['type'] as String,
-      coordinates: coordinates,
+    return rawCoordinates.map<List<double>>((coordinate) {
+      if (coordinate is! List || coordinate.length < 2) {
+        throw FormatException('Invalid GeoJSON position: $coordinate');
+      }
+
+      final longitude = _parseCoordinate(coordinate[0]);
+      final latitude = _parseCoordinate(coordinate[1]);
+      return [longitude, latitude];
+    }).toList();
+  }
+
+  static double _parseCoordinate(Object? value) {
+    if (value is num) {
+      return value.toDouble();
+    }
+    if (value is String) {
+      final parsedValue = double.tryParse(value);
+      if (parsedValue != null) {
+        return parsedValue;
+      }
+    }
+    throw FormatException(
+      'Coordinate value is not numeric: ${value.runtimeType} - $value',
     );
   }
 
-  Map<String, dynamic> toJson() => {'type': type, 'coordinates': coordinates};
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'coordinates': type == 'LineString' ? parts.single : parts,
+  };
 
   final String type;
-  final List<List<double>> coordinates;
+  final List<List<List<double>>> parts;
+
+  List<List<double>> get coordinates => [for (final part in parts) ...part];
 }
 
 @JsonSerializable()

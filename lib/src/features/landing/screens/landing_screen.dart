@@ -1,7 +1,6 @@
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
-import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
+import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
-import 'package:TaxiApp/src/core/widgets/loaders/generic_loader.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_bottom_sheet.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_search_bar.dart';
 import 'package:TaxiApp/src/features/landing/widgets/my_location_button.dart';
@@ -17,61 +16,59 @@ class LandingScreen extends StatefulWidget {
 }
 
 class _LandingScreenState extends State<LandingScreen> {
-  final TaxiRoutesProvider _taxiRoutesProvider = TaxiRoutesProvider.create();
   final MapsProvider _mapsProvider = MapsProvider.create();
+  final UserLocationProvider _userLocationProvider =
+      UserLocationProvider.create();
 
   @override
   Widget build(BuildContext context) => Obx(() {
-    if (_taxiRoutesProvider.isLoading.value) {
-      return const Scaffold(body: Center(child: GenericLoader()));
-    } else {
-      final version = _mapsProvider.mapVersion.value;
-      return Scaffold(
-        body: Stack(
-          alignment: Alignment.center,
-          children: [
-            Obx(
-              () => GoogleMap(
-                key: ValueKey(version),
-                mapTypeControlEnabled: true,
-                initialCameraPosition:
-                    _mapsProvider.initialCameraPosition.value,
-                compassEnabled: true,
-                markers: _mapsProvider.markers,
-                myLocationButtonEnabled: true,
-                myLocationEnabled: true,
-                trafficEnabled: true,
-                buildingsEnabled: true,
-                indoorViewEnabled: true,
-                polylines: _mapsProvider.polylines,
-                onMapCreated: (GoogleMapController controller) =>
-                    _mapsProvider.mapController.value = controller,
-                zoomControlsEnabled: false,
-              ),
+    _mapsProvider.mapVersion.value;
+    final hasLocation = _userLocationProvider.userLocation.value != null;
+    return Scaffold(
+      body: Stack(
+        alignment: Alignment.center,
+        children: [
+          GoogleMap(
+            mapTypeControlEnabled: true,
+            initialCameraPosition: _mapsProvider.initialCameraPosition.value,
+            compassEnabled: true,
+            markers: _mapsProvider.markers,
+            myLocationButtonEnabled: false,
+            myLocationEnabled: hasLocation,
+            trafficEnabled: true,
+            buildingsEnabled: true,
+            indoorViewEnabled: true,
+            polylines: _mapsProvider.polylines,
+            onMapCreated: (GoogleMapController controller) {
+              _mapsProvider.mapController.value = controller;
+              if (hasLocation) {
+                _mapsProvider.moveToMyLocation();
+              }
+            },
+            zoomControlsEnabled: false,
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: SafeArea(
+              child:
+                  Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Expanded(child: LandingSearchBar()),
+                      MyLocationButton().paddingOnly(left: Dimensions.eight),
+                    ],
+                  ).paddingOnly(
+                    left: Dimensions.sixteen,
+                    right: Dimensions.sixteen,
+                    top: Dimensions.sixteen,
+                  ),
             ),
-            Align(
-              alignment: Alignment.topCenter,
-              child: SafeArea(
-                child:
-                    Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Expanded(child: LandingSearchBar()),
-                        MyLocationButton().paddingOnly(left: Dimensions.eight),
-                      ],
-                    ).paddingOnly(
-                      left: Dimensions.sixteen,
-                      right: Dimensions.sixteen,
-                      top: Dimensions.sixteen,
-                    ),
-              ),
-            ),
-            LandingBottomSheet(),
-          ],
-        ),
-      );
-    }
+          ),
+          LandingBottomSheet(),
+        ],
+      ),
+    );
   });
 }

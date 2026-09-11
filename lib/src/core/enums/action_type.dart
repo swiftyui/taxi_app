@@ -1,6 +1,9 @@
 enum ActionType {
   selectedLocation,
-  viewRoute;
+  viewRoute,
+  planningJourney,
+  journeyReady,
+  journeyStarted;
 
   const ActionType();
 }

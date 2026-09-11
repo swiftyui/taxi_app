@@ -6,6 +6,7 @@ import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/loaders/generic_loader.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_item_widget.dart';
+import 'package:TaxiApp/src/features/landing/widgets/journey_details_widget.dart';
 import 'package:TaxiApp/src/features/landing/widgets/selected_route_details_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -72,6 +73,10 @@ class LandingBottomSheet extends StatelessWidget {
       case ActionType.selectedLocation:
       case ActionType.viewRoute:
         return const SelectedRouteDetailsWidget();
+      case ActionType.planningJourney:
+      case ActionType.journeyReady:
+      case ActionType.journeyStarted:
+        return JourneyDetailsWidget();
       default:
         return Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -85,8 +90,16 @@ class LandingBottomSheet extends StatelessWidget {
               ),
             ).paddingOnly(bottom: Dimensions.eight, left: Dimensions.eight),
 
-            _taxiRoutesProvider.nearbyRoutes.isEmpty
+            _taxiRoutesProvider.isLoading.value
                 ? const GenericLoader()
+                : _taxiRoutesProvider.errorMessage.value != null
+                ? _RouteStatus(
+                    message: _taxiRoutesProvider.errorMessage.value!,
+                    actionLabel: Get.appLocalizations.tryAgain,
+                    onAction: _taxiRoutesProvider.loadRoutes,
+                  )
+                : _taxiRoutesProvider.nearbyRoutes.isEmpty
+                ? _RouteStatus(message: Get.appLocalizations.noNearbyRoutes)
                 : ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -108,4 +121,29 @@ class LandingBottomSheet extends StatelessWidget {
         );
     }
   }
+}
+
+class _RouteStatus extends StatelessWidget {
+  const _RouteStatus({required this.message, this.actionLabel, this.onAction});
+
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      children: [
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: Get.textTheme.bodyMedium?.copyWith(
+            color: Colours.charcoalLight,
+          ),
+        ),
+        if (onAction != null)
+          TextButton(onPressed: onAction, child: Text(actionLabel!)),
+      ],
+    ).paddingAll(Dimensions.sixteen),
+  );
 }

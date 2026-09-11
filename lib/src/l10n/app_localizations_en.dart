@@ -129,4 +129,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get myProfile => 'My profile';
+
+  @override
+  String get whereDoYouWantToGo => 'Where do you want to go?';
+
+  @override
+  String get searchDestination => 'Search for a destination';
+
+  @override
+  String get searchAtLeastThreeCharacters =>
+      'Enter at least 3 characters to search.';
+
+  @override
+  String get noDestinationsFound => 'No destinations found.';
+
+  @override
+  String get planningJourney => 'Finding your best available taxi journey...';
+
+  @override
+  String get bestAvailableJourney => 'Best available taxi journey';
+
+  @override
+  String get walkingEstimateNotice =>
+      'Walking links are straight-line estimates because the current data source does not provide pedestrian directions.';
+
+  @override
+  String get startJourney => 'Start journey';
+
+  @override
+  String get journeyStarted => 'Journey started';
+
+  @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String get noNearbyRoutes =>
+      'No taxi routes were found within 5 km of your current location.';
 }

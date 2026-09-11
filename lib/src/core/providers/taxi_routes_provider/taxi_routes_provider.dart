@@ -1,4 +1,5 @@
 // https://pta-gis-2-web1.csir.co.za/server2/rest/services/Hosted/Tshwane_Taxi_Routes_shp/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
@@ -11,27 +12,59 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class TaxiRoutesProvider extends GetxController {
-  TaxiRoutesProvider(this._mapsProvider);
+  TaxiRoutesProvider(this._mapsProvider, this._userLocationProvider);
   static TaxiRoutesProvider create() => Get.isRegistered<TaxiRoutesProvider>()
       ? Get.find<TaxiRoutesProvider>()
-      : Get.put<TaxiRoutesProvider>(TaxiRoutesProvider(MapsProvider.create()));
+      : Get.put<TaxiRoutesProvider>(
+          TaxiRoutesProvider(
+            MapsProvider.create(),
+            UserLocationProvider.create(),
+          ),
+        );
 
   final MapsProvider _mapsProvider;
-  final RxList<TaxiRouteParent> _taxiRoutesFeature = <TaxiRouteParent>[].obs;
+  final UserLocationProvider _userLocationProvider;
   final RxList<TaxiRouteModel> taxiRoutes = <TaxiRouteModel>[].obs;
   final RxList<NearbyTaxiRouteModel> nearbyRoutes =
       <NearbyTaxiRouteModel>[].obs;
   final RxBool isLoading = false.obs;
+  final RxnString errorMessage = RxnString();
+  late final Worker _locationWorker;
+  Position? _lastNearbyLocation;
 
   @override
   void onInit() {
     super.onInit();
-    _getPretoriaRoutes();
+    _locationWorker = ever<Position?>(_userLocationProvider.userLocation, (
+      position,
+    ) {
+      if (position != null) {
+        _mapsProvider.initialCameraPosition.value = CameraPosition(
+          target: LatLng(position.latitude, position.longitude),
+          zoom: 14,
+        );
+        if (taxiRoutes.isNotEmpty) {
+          _updateNearbyRoutes(position);
+        }
+      }
+    });
+    unawaited(loadRoutes());
   }
 
-  Future<void> _getPretoriaRoutes() async {
+  @override
+  void onClose() {
+    _locationWorker.dispose();
+    super.onClose();
+  }
+
+  Future<void> loadRoutes() async {
+    if (isLoading.value) {
+      return;
+    }
+
     try {
       isLoading.value = true;
+      errorMessage.value = null;
       final url = Uri.https(
         'pta-gis-2-web1.csir.co.za',
         '/server2/rest/services/Hosted/Tshwane_Taxi_Routes_shp/FeatureServer/0/query',
@@ -43,42 +76,62 @@ class TaxiRoutesProvider extends GetxController {
         },
       );
 
-      final response = await get(url);
-
-      final data = response.body;
-
-      final taxiRoutesData = TaxiRouteParent.fromJson(jsonDecode(data));
-
-      _taxiRoutesFeature.value = [taxiRoutesData];
-      taxiRoutes.value = taxiRoutesData.features;
-
-      final UserLocationProvider userLocationProvider =
-          UserLocationProvider.create();
-
-      // Get user's current location
-
-      while (userLocationProvider.userLocation.value == null) {
-        await Future.delayed(const Duration(milliseconds: 100));
+      final response = await get(url).timeout(const Duration(seconds: 30));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ClientException(
+          'Taxi route request failed with status ${response.statusCode}.',
+          url,
+        );
       }
 
-      // Find nearby routes
-      await _findNearbyRoutes(userLocationProvider.userLocation.value!);
-      _mapsProvider.updateMarkers();
-      _mapsProvider.initialCameraPosition.value = CameraPosition(
-        target: LatLng(
-          userLocationProvider.userLocation.value!.latitude,
-          userLocationProvider.userLocation.value!.longitude,
-        ),
-        zoom: 14.0,
+      final taxiRoutesData = TaxiRouteParent.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } catch (e) {
-      print('Error fetching Pretoria Taxi Routes: $e');
+      taxiRoutes.value = taxiRoutesData.features;
+
+      final userLocation = _userLocationProvider.userLocation.value;
+      if (userLocation != null) {
+        _mapsProvider.initialCameraPosition.value = CameraPosition(
+          target: LatLng(userLocation.latitude, userLocation.longitude),
+          zoom: 14,
+        );
+        _lastNearbyLocation = userLocation;
+        _findNearbyRoutes(userLocation);
+      }
+      await _mapsProvider.updateMarkers();
+    } on TimeoutException {
+      errorMessage.value = 'Taxi routes took too long to load. Please retry.';
+    } on FormatException {
+      errorMessage.value = 'Taxi route data could not be read.';
+    } on ClientException {
+      errorMessage.value =
+          'Taxi routes are unavailable. Check your connection.';
+    } catch (_) {
+      errorMessage.value = 'Taxi routes could not be loaded.';
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> _findNearbyRoutes(Position userLocation) async {
+  void _updateNearbyRoutes(Position position) {
+    final previousLocation = _lastNearbyLocation;
+    if (previousLocation != null &&
+        Geolocator.distanceBetween(
+              previousLocation.latitude,
+              previousLocation.longitude,
+              position.latitude,
+              position.longitude,
+            ) <
+            250) {
+      return;
+    }
+
+    _lastNearbyLocation = position;
+    _findNearbyRoutes(position);
+    unawaited(_mapsProvider.updateMarkers());
+  }
+
+  void _findNearbyRoutes(Position userLocation) {
     nearbyRoutes.clear();
     List<TaxiRouteModel> internalTaxiRoutes = <TaxiRouteModel>[];
 

@@ -1,9 +1,8 @@
 import 'package:TaxiApp/src/core/enums/image_list.dart';
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/extensions/typed_extensions.dart';
+import 'package:TaxiApp/src/core/models/destination_search_result.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
-import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/nearby_taxi_route_model.dart';
-import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/taxi_route_model.dart';
 import 'package:TaxiApp/src/core/routes/routes.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/features/my_profile/widgets/profile_image.dart';
@@ -51,13 +50,8 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
           Expanded(
             child: _textToDisplay.onTap(() async {
               final result = await Get.toNamed(AppRoutes.searchRoutes.value);
-              if (result != null && result is TaxiRouteModel) {
-                _actionsProvider.setSelectedRoute(
-                  NearbyTaxiRouteModel.fromTaxiRouteModel(result),
-                );
-                _actionsProvider.viewRoute(
-                  NearbyTaxiRouteModel.fromTaxiRouteModel(result),
-                );
+              if (result is DestinationSearchResult) {
+                await _actionsProvider.planJourney(result);
               }
             }),
           ),
@@ -77,10 +71,34 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
   );
 
   Widget get _textToDisplay {
+    final destination = _actionsProvider.selectedDestination.value;
+    if (destination != null) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            destination.label,
+            style: Get.textTheme.labelLarge?.copyWith(color: Colors.black),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (destination.subtitle.isNotEmpty)
+            Text(
+              destination.subtitle,
+              style: Get.textTheme.bodySmall?.copyWith(color: Colors.black54),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+        ],
+      );
+    }
     if (_actionsProvider.selectedRoute.value == null) {
       return Text(
-        Get.appLocalizations.searchNearbyRoutes,
+        Get.appLocalizations.whereDoYouWantToGo,
         style: Get.textTheme.bodyMedium?.copyWith(color: Colors.black),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       );
     } else {
       return Column(
