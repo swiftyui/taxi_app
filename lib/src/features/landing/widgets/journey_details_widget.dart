@@ -2,6 +2,7 @@ import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/models/taxi_journey.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
+import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/buttons/primary_button.dart';
@@ -62,37 +63,76 @@ class JourneyDetailsWidget extends StatelessWidget {
                   : () => _actionsProvider.planJourney(destination),
             ),
           ] else if (journey != null) ...[
+            if (_actionsProvider.selectedAction.value ==
+                    ActionType.journeyStarted ||
+                _actionsProvider.selectedAction.value ==
+                    ActionType.journeyCompleted)
+              _LiveGuidanceCard(
+                journey: journey,
+                stepIndex: _actionsProvider.activeJourneyStepIndex.value,
+                distanceToNextStepMeters:
+                    _actionsProvider.distanceToNextStepMeters.value,
+                isComplete: _actionsProvider.isJourneyComplete.value,
+              ),
             Text(
-              Get.appLocalizations.bestAvailableJourney,
+              journey.transferCount == 0
+                  ? Get.appLocalizations.directTaxiJourney
+                  : '${journey.transferCount} taxi transfer'
+                        '${journey.transferCount == 1 ? '' : 's'}',
               style: Get.textTheme.labelLarge?.copyWith(
                 color: Colours.charcoalLight,
               ),
             ).paddingOnly(bottom: Dimensions.twelve),
-            for (final step in journey.steps) _JourneyStepTile(step: step),
+            for (
+              var stepIndex = 0;
+              stepIndex < journey.steps.length;
+              stepIndex++
+            )
+              _JourneyStepTile(
+                step: journey.steps[stepIndex],
+                isActive:
+                    _actionsProvider.selectedAction.value ==
+                        ActionType.journeyStarted &&
+                    _actionsProvider.activeJourneyStepIndex.value == stepIndex,
+                isComplete:
+                    _actionsProvider.selectedAction.value ==
+                        ActionType.journeyCompleted ||
+                    (_actionsProvider.selectedAction.value ==
+                            ActionType.journeyStarted &&
+                        stepIndex <
+                            _actionsProvider.activeJourneyStepIndex.value),
+              ),
             _JourneyNotice(
               icon: Icons.info_outline,
               message: Get.appLocalizations.walkingEstimateNotice,
             ),
-            if (journey.route.properties.fare > 0)
+            if (journey.listedFares.isNotEmpty)
               Text(
-                'Listed fare: '
-                'R${journey.route.properties.fare.toStringAsFixed(2)}',
+                journey.listedFares.length == 1
+                    ? 'Listed fare: '
+                          'R${journey.listedFares.single.toStringAsFixed(2)}'
+                    : 'Listed route fares: '
+                          '${journey.listedFares.map((fare) => 'R${fare.toStringAsFixed(2)}').join(' + ')}',
                 style: Get.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ).paddingOnly(bottom: Dimensions.twelve),
             PrimaryButton(
-              text:
-                  _actionsProvider.selectedAction.value ==
-                      ActionType.journeyStarted
-                  ? Get.appLocalizations.journeyStarted
-                  : Get.appLocalizations.startJourney,
+              text: switch (_actionsProvider.selectedAction.value) {
+                ActionType.journeyStarted =>
+                  Get.appLocalizations.journeyInProgress,
+                ActionType.journeyCompleted =>
+                  Get.appLocalizations.journeyComplete,
+                _ => Get.appLocalizations.startJourney,
+              },
               icon: const Icon(Icons.navigation, color: Colors.white),
               buttonColor: Colours.primaryOne,
               borderColor: Colours.primaryOne,
               enabled:
                   _actionsProvider.selectedAction.value !=
-                  ActionType.journeyStarted,
+                      ActionType.journeyStarted &&
+                  _actionsProvider.selectedAction.value !=
+                      ActionType.journeyCompleted,
               onTap: _actionsProvider.startJourney,
             ),
           ],
@@ -103,9 +143,15 @@ class JourneyDetailsWidget extends StatelessWidget {
 }
 
 class _JourneyStepTile extends StatelessWidget {
-  const _JourneyStepTile({required this.step});
+  const _JourneyStepTile({
+    required this.step,
+    required this.isActive,
+    required this.isComplete,
+  });
 
   final JourneyStep step;
+  final bool isActive;
+  final bool isComplete;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -117,12 +163,18 @@ class _JourneyStepTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: step.type == JourneyStepType.taxi
               ? Colours.yellow
+              : isActive
+              ? Colours.green
               : Colours.searchBarBackground,
           shape: BoxShape.circle,
         ),
         child: Icon(
-          step.type == JourneyStepType.taxi
+          isComplete
+              ? Icons.check
+              : step.type == JourneyStepType.taxi
               ? Icons.local_taxi
+              : step.type == JourneyStepType.transfer
+              ? Icons.transfer_within_a_station
               : Icons.directions_walk,
           color: Colors.black,
         ),
@@ -135,6 +187,7 @@ class _JourneyStepTile extends StatelessWidget {
               step.instruction,
               style: Get.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.bold,
+                color: isComplete ? Colors.grey : Colors.black,
               ),
             ),
             Text(
@@ -148,6 +201,56 @@ class _JourneyStepTile extends StatelessWidget {
       ),
     ],
   ).paddingOnly(bottom: Dimensions.sixteen);
+}
+
+class _LiveGuidanceCard extends StatelessWidget {
+  const _LiveGuidanceCard({
+    required this.journey,
+    required this.stepIndex,
+    required this.distanceToNextStepMeters,
+    required this.isComplete,
+  });
+
+  final TaxiJourney journey;
+  final int stepIndex;
+  final double distanceToNextStepMeters;
+  final bool isComplete;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(Dimensions.twelve),
+    margin: const EdgeInsets.only(bottom: Dimensions.sixteen),
+    decoration: BoxDecoration(
+      color: isComplete
+          ? Colours.green.withValues(alpha: 0.12)
+          : Colours.yellow.withValues(alpha: 0.18),
+      borderRadius: BorderRadius.circular(Dimensions.eight),
+    ),
+    child: isComplete
+        ? Text(
+            Get.appLocalizations.journeyComplete,
+            style: Get.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                journey.steps[stepIndex].instruction,
+                style: Get.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '${TaxiRoutingService.formatDistance(distanceToNextStepMeters)} '
+                '${Get.appLocalizations.remaining}',
+                style: Get.textTheme.bodySmall,
+              ),
+            ],
+          ),
+  );
 }
 
 class _JourneyNotice extends StatelessWidget {

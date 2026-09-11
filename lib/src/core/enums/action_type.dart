@@ -3,7 +3,8 @@ enum ActionType {
   viewRoute,
   planningJourney,
   journeyReady,
-  journeyStarted;
+  journeyStarted,
+  journeyCompleted;
 
   const ActionType();
 }

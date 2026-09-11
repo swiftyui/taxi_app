@@ -93,28 +93,36 @@ class MapsProvider extends GetxController {
 
       case ActionType.journeyReady:
       case ActionType.journeyStarted:
+      case ActionType.journeyCompleted:
         final journey = actionsProvider.journey.value;
         if (journey == null) {
           newMarkers = <Marker>{};
           newPolylines = <Polyline>{};
           break;
         }
-        final currentPosition =
-            UserLocationProvider.create().userLocation.value;
-        final currentPoint = currentPosition == null
-            ? journey.boardingPoint
-            : LatLng(currentPosition.latitude, currentPosition.longitude);
         newMarkers = {
-          Marker(
-            markerId: const MarkerId('journey_boarding'),
-            position: journey.boardingPoint,
-            infoWindow: const InfoWindow(title: 'Board taxi'),
-          ),
-          Marker(
-            markerId: const MarkerId('journey_exit'),
-            position: journey.exitPoint,
-            infoWindow: const InfoWindow(title: 'Leave taxi'),
-          ),
+          for (
+            var legIndex = 0;
+            legIndex < journey.taxiLegs.length;
+            legIndex++
+          ) ...{
+            Marker(
+              markerId: MarkerId('journey_boarding_$legIndex'),
+              position: journey.taxiLegs[legIndex].boardingPoint,
+              infoWindow: InfoWindow(
+                title: legIndex == 0 ? 'Board taxi' : 'Board connecting taxi',
+              ),
+            ),
+            Marker(
+              markerId: MarkerId('journey_exit_$legIndex'),
+              position: journey.taxiLegs[legIndex].exitPoint,
+              infoWindow: InfoWindow(
+                title: legIndex == journey.taxiLegs.length - 1
+                    ? 'Leave taxi'
+                    : 'Transfer taxis',
+              ),
+            ),
+          },
           Marker(
             markerId: const MarkerId('journey_destination'),
             position: journey.destination.position,
@@ -122,26 +130,25 @@ class MapsProvider extends GetxController {
           ),
         };
         newPolylines = {
-          Polyline(
-            polylineId: const PolylineId('walk_to_taxi'),
-            points: [currentPoint, journey.boardingPoint],
-            color: Colors.blueGrey,
-            width: 5,
-            patterns: [PatternItem.dash(18), PatternItem.gap(10)],
-          ),
-          Polyline(
-            polylineId: const PolylineId('taxi_journey'),
-            points: journey.taxiRoutePoints,
-            color: Colors.amber,
-            width: 7,
-          ),
-          Polyline(
-            polylineId: const PolylineId('walk_to_destination'),
-            points: [journey.exitPoint, journey.destination.position],
-            color: Colors.blueGrey,
-            width: 5,
-            patterns: [PatternItem.dash(18), PatternItem.gap(10)],
-          ),
+          for (var stepIndex = 0; stepIndex < journey.steps.length; stepIndex++)
+            Polyline(
+              polylineId: PolylineId('journey_step_$stepIndex'),
+              points: journey.steps[stepIndex].path,
+              color: _journeyStepColor(
+                step: journey.steps[stepIndex],
+                stepIndex: stepIndex,
+                actionsProvider: actionsProvider,
+              ),
+              width:
+                  actionsProvider.selectedAction.value ==
+                          ActionType.journeyStarted &&
+                      actionsProvider.activeJourneyStepIndex.value == stepIndex
+                  ? 8
+                  : 6,
+              patterns: journey.steps[stepIndex].type == JourneyStepType.taxi
+                  ? const []
+                  : [PatternItem.dash(18), PatternItem.gap(10)],
+            ),
         };
         break;
 
@@ -186,7 +193,8 @@ class MapsProvider extends GetxController {
         );
       }
     } else if (selectedAction == ActionType.journeyReady ||
-        selectedAction == ActionType.journeyStarted) {
+        selectedAction == ActionType.journeyStarted ||
+        selectedAction == ActionType.journeyCompleted) {
       final journey = actionsProvider.journey.value;
       if (journey != null) {
         Future<void>.delayed(
@@ -202,9 +210,28 @@ class MapsProvider extends GetxController {
     _fitPoints([
       if (currentPosition != null)
         LatLng(currentPosition.latitude, currentPosition.longitude),
-      ...journey.taxiRoutePoints,
+      for (final step in journey.steps) ...step.path,
       journey.destination.position,
     ]);
+  }
+
+  Color _journeyStepColor({
+    required JourneyStep step,
+    required int stepIndex,
+    required ActionsProvider actionsProvider,
+  }) {
+    if (actionsProvider.selectedAction.value == ActionType.journeyStarted) {
+      if (stepIndex < actionsProvider.activeJourneyStepIndex.value) {
+        return Colors.grey;
+      }
+      if (stepIndex == actionsProvider.activeJourneyStepIndex.value) {
+        return Colors.green;
+      }
+    }
+    if (actionsProvider.selectedAction.value == ActionType.journeyCompleted) {
+      return Colors.grey;
+    }
+    return step.type == JourneyStepType.taxi ? Colors.amber : Colors.blueGrey;
   }
 
   void _fitPoints(List<LatLng> points) {

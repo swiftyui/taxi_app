@@ -6,7 +6,9 @@ import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/nearby_taxi_route_model.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
+import 'package:TaxiApp/src/core/services/journey_progress_service.dart';
 import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -21,6 +23,22 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
   final Rxn<TaxiJourney> journey = Rxn<TaxiJourney>();
   final RxBool isPlanningJourney = false.obs;
   final RxnString journeyError = RxnString();
+  final RxInt activeJourneyStepIndex = 0.obs;
+  final RxDouble distanceToNextStepMeters = 0.0.obs;
+  final RxBool isJourneyComplete = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    everWithDisposal<Position?>(UserLocationProvider.create().userLocation, (
+      position,
+    ) {
+      if (position != null &&
+          selectedAction.value == ActionType.journeyStarted) {
+        _updateJourneyProgress(LatLng(position.latitude, position.longitude));
+      }
+    });
+  }
 
   /// Route Selection
   final Rxn<NearbyTaxiRouteModel> selectedRoute = Rxn<NearbyTaxiRouteModel>();
@@ -80,15 +98,16 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
         return;
       }
 
-      final plannedJourney = const TaxiRoutingService().findBestJourney(
-        origin: LatLng(position.latitude, position.longitude),
-        destination: destination,
-        routes: taxiRoutesProvider.taxiRoutes,
-      );
+      final plannedJourney = await const TaxiRoutingService()
+          .findBestJourneyAsync(
+            origin: LatLng(position.latitude, position.longitude),
+            destination: destination,
+            routes: taxiRoutesProvider.taxiRoutes,
+          );
       if (plannedJourney == null) {
         journeyError.value =
-            'No direct taxi journey was found within a 5 km walk of both '
-            'your location and the destination.';
+            'No direct or connecting taxi journey was found within the '
+            'supported walking distances.';
         return;
       }
 
@@ -103,10 +122,19 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
   }
 
   void startJourney() {
-    if (journey.value == null) {
+    final activeJourney = journey.value;
+    if (activeJourney == null) {
       return;
     }
+    activeJourneyStepIndex.value = 0;
+    isJourneyComplete.value = false;
     selectedAction.value = ActionType.journeyStarted;
+    final currentPosition = UserLocationProvider.create().userLocation.value;
+    if (currentPosition != null) {
+      _updateJourneyProgress(
+        LatLng(currentPosition.latitude, currentPosition.longitude),
+      );
+    }
     MapsProvider.create().updateMarkers();
   }
 
@@ -121,5 +149,32 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
     journey.value = null;
     journeyError.value = null;
     isPlanningJourney.value = false;
+    activeJourneyStepIndex.value = 0;
+    distanceToNextStepMeters.value = 0;
+    isJourneyComplete.value = false;
+  }
+
+  void _updateJourneyProgress(LatLng location) {
+    final activeJourney = journey.value;
+    if (activeJourney == null) {
+      return;
+    }
+
+    final previousStepIndex = activeJourneyStepIndex.value;
+    final progress = const JourneyProgressService().update(
+      journey: activeJourney,
+      currentStepIndex: previousStepIndex,
+      location: location,
+    );
+    activeJourneyStepIndex.value = progress.stepIndex;
+    distanceToNextStepMeters.value = progress.distanceToNextStepMeters;
+    isJourneyComplete.value = progress.isComplete;
+
+    if (progress.isComplete) {
+      selectedAction.value = ActionType.journeyCompleted;
+    }
+    if (progress.stepIndex != previousStepIndex || progress.isComplete) {
+      MapsProvider.create().updateMarkers();
+    }
   }
 }

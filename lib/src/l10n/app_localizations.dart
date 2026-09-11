@@ -387,6 +387,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No taxi routes were found within 5 km of your current location.'**
   String get noNearbyRoutes;
+
+  /// Direct journey summary heading
+  ///
+  /// In en, this message translates to:
+  /// **'Direct taxi journey'**
+  String get directTaxiJourney;
+
+  /// Active journey button label
+  ///
+  /// In en, this message translates to:
+  /// **'Journey in progress'**
+  String get journeyInProgress;
+
+  /// Completed journey label
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached your destination'**
+  String get journeyComplete;
+
+  /// Distance remaining suffix
+  ///
+  /// In en, this message translates to:
+  /// **'remaining'**
+  String get remaining;
 }
 
 class _AppLocalizationsDelegate

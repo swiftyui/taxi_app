@@ -165,4 +165,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noNearbyRoutes =>
       'No taxi routes were found within 5 km of your current location.';
+
+  @override
+  String get directTaxiJourney => 'Direct taxi journey';
+
+  @override
+  String get journeyInProgress => 'Journey in progress';
+
+  @override
+  String get journeyComplete => 'You have reached your destination';
+
+  @override
+  String get remaining => 'remaining';
 }

@@ -195,5 +195,21 @@
     "noNearbyRoutes": "No taxi routes were found within 5 km of your current location.",
     "@noNearbyRoutes": {
         "description": "Empty nearby taxi routes message"
+    },
+    "directTaxiJourney": "Direct taxi journey",
+    "@directTaxiJourney": {
+        "description": "Direct journey summary heading"
+    },
+    "journeyInProgress": "Journey in progress",
+    "@journeyInProgress": {
+        "description": "Active journey button label"
+    },
+    "journeyComplete": "You have reached your destination",
+    "@journeyComplete": {
+        "description": "Completed journey label"
+    },
+    "remaining": "remaining",
+    "@remaining": {
+        "description": "Distance remaining suffix"
     }
 }

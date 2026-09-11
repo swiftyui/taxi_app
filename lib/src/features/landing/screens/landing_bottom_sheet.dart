@@ -76,6 +76,7 @@ class LandingBottomSheet extends StatelessWidget {
       case ActionType.planningJourney:
       case ActionType.journeyReady:
       case ActionType.journeyStarted:
+      case ActionType.journeyCompleted:
         return JourneyDetailsWidget();
       default:
         return Column(
