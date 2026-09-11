@@ -4,12 +4,19 @@ PODS:
     - FirebaseAuth (~> 12.18.0)
   - Firebase/CoreOnly (12.18.0):
     - FirebaseCore (~> 12.18.0)
+  - Firebase/Storage (12.18.0):
+    - Firebase/CoreOnly
+    - FirebaseStorage (~> 12.18.0)
   - firebase_auth (6.6.0):
     - Firebase/Auth (= 12.18.0)
     - firebase_core
     - Flutter
   - firebase_core (4.14.0):
     - Firebase/CoreOnly (= 12.18.0)
+    - Flutter
+  - firebase_storage (13.5.0):
+    - Firebase/Storage (= 12.18.0)
+    - firebase_core
     - Flutter
   - FirebaseAppCheckInterop (12.18.0)
   - FirebaseAuth (12.18.0):
@@ -30,6 +37,13 @@ PODS:
     - FirebaseCore (~> 12.18.0)
   - FirebaseCoreInternal (12.18.0):
     - "GoogleUtilities/NSData+zlib (~> 8.1)"
+  - FirebaseStorage (12.18.0):
+    - FirebaseAppCheckInterop (~> 12.18.0)
+    - FirebaseAuthInterop (~> 12.18.0)
+    - FirebaseCore (~> 12.18.0)
+    - FirebaseCoreExtension (~> 12.18.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GTMSessionFetcher/Core (< 6.0, >= 3.4)
   - Flutter (1.0.0)
   - flutter_localization (0.0.1):
     - Flutter
@@ -70,6 +84,8 @@ PODS:
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
   - GTMSessionFetcher/Core (5.3.1)
+  - image_picker_ios (0.0.1):
+    - Flutter
   - package_info_plus (0.4.5):
     - Flutter
   - permission_handler_apple (9.4.8):
@@ -84,11 +100,13 @@ PODS:
 DEPENDENCIES:
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
+  - firebase_storage (from `.symlinks/plugins/firebase_storage/ios`)
   - Flutter (from `Flutter`)
   - flutter_localization (from `.symlinks/plugins/flutter_localization/ios`)
   - geocoding_darwin (from `.symlinks/plugins/geocoding_darwin/darwin`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
   - google_maps_flutter_ios (from `.symlinks/plugins/google_maps_flutter_ios/ios`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -103,6 +121,7 @@ SPEC REPOS:
     - FirebaseCore
     - FirebaseCoreExtension
     - FirebaseCoreInternal
+    - FirebaseStorage
     - Google-Maps-iOS-Utils
     - GoogleMaps
     - GoogleUtilities
@@ -114,6 +133,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_auth/ios"
   firebase_core:
     :path: ".symlinks/plugins/firebase_core/ios"
+  firebase_storage:
+    :path: ".symlinks/plugins/firebase_storage/ios"
   Flutter:
     :path: Flutter
   flutter_localization:
@@ -124,6 +145,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/geolocator_apple/darwin"
   google_maps_flutter_ios:
     :path: ".symlinks/plugins/google_maps_flutter_ios/ios"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   permission_handler_apple:
@@ -137,12 +160,14 @@ SPEC CHECKSUMS:
   Firebase: 5523dd53ebe603451b4e1befcd99fa20a5c015cd
   firebase_auth: dc6d519e56272e54b6ecb504682926822dfb3232
   firebase_core: 22b31970001508f6e63945bedcb7b9de68819aa5
+  firebase_storage: d29b933001ab3621acf6b45871a7f981e3e2448b
   FirebaseAppCheckInterop: 8c2fe8b563377bd948ee6acc2871fe2dfb3a034a
   FirebaseAuth: 389097b0c63059262aa02800cb0b93c9fab09130
   FirebaseAuthInterop: 32c03820809ddc9e63dfaaf3711ce2ac8da7e6ae
   FirebaseCore: 96787d19ee32dc2242cc487b301bc616afeb398b
   FirebaseCoreExtension: a86bab02524ca2bff95dddab7a3fcad505c2ddeb
   FirebaseCoreInternal: 93b2d5f9e184c6818a04433891c358b0720a6a38
+  FirebaseStorage: 6dc90a86bf2a8f1dc54a6ca659ae9898465e10a0
   Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   flutter_localization: 4cfbf7b88962629bf7afc93156a271be80696f97
   geocoding_darwin: 968545604e6896deeef55517d53a81b3b9801971
@@ -152,6 +177,7 @@ SPEC CHECKSUMS:
   GoogleMaps: 0608099d4870cac8754bdba9b6953db543432438
   GoogleUtilities: 4e0c2ad9fa0d0d18b5c4df8bf57b461cba35b0bb
   GTMSessionFetcher: a6d2b2aa203485893d4511ff64642dc811f7c09f
+  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   permission_handler_apple: 92d754bbaa7361d436db2d6c3c1c2a0fdcec462e
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
