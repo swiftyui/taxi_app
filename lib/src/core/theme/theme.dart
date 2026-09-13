@@ -85,6 +85,7 @@ class ThemeSettingsService extends GetxController {
         colorScheme: colorScheme,
         textTheme: textTheme,
       ),
+      filledButtonTheme: _filledButtonTheme(textTheme),
       outlinedButtonTheme: _outlineButtonTheme(
         colorScheme: colorScheme,
         textTheme: textTheme,
@@ -230,6 +231,7 @@ class ThemeSettingsService extends GetxController {
         colorScheme: colorScheme,
         textTheme: textTheme,
       ),
+      filledButtonTheme: _filledButtonTheme(textTheme),
       outlinedButtonTheme: _outlineButtonTheme(
         colorScheme: colorScheme,
         textTheme: textTheme,
@@ -286,32 +288,56 @@ class ThemeSettingsService extends GetxController {
     required ColorScheme colorScheme,
     required TextTheme textTheme,
   }) => InputDecorationTheme(
-    labelStyle: textTheme.labelSmall?.copyWith(color: Colors.white),
-    errorStyle: textTheme.labelSmall?.copyWith(color: Colors.white),
-    suffixIconColor: Colors.white,
+    filled: true,
+    fillColor: Get.isDarkMode
+        ? Colours.primaryTwo
+        : Colours.searchBarBackground,
+    labelStyle: textTheme.bodySmall?.copyWith(color: Colours.charcoalLight),
+    floatingLabelStyle: textTheme.bodySmall?.copyWith(
+      color: Colours.blueThree,
+      fontWeight: FontWeight.w600,
+    ),
+    hintStyle: textTheme.bodySmall?.copyWith(
+      color: Colours.charcoalLight.withValues(alpha: 0.75),
+    ),
+    errorStyle: textTheme.labelLarge?.copyWith(color: Colours.errorColour),
+    prefixIconColor: Colours.charcoalLight,
+    suffixIconColor: Colours.charcoalLight,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(Dimensions.eight),
+      borderSide: const BorderSide(color: Colours.containerOne),
+    ),
     focusedBorder: const OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.white, width: 1.5),
+      borderRadius: BorderRadius.all(Radius.circular(Dimensions.eight)),
+      borderSide: BorderSide(color: Colours.blueThree, width: 1.5),
     ),
     errorBorder: const OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.white, width: 1.5),
+      borderRadius: BorderRadius.all(Radius.circular(Dimensions.eight)),
+      borderSide: BorderSide(color: Colours.errorColour),
     ),
     focusedErrorBorder: const OutlineInputBorder(
-      borderSide: BorderSide(color: Colors.white, width: 1.5),
+      borderRadius: BorderRadius.all(Radius.circular(Dimensions.eight)),
+      borderSide: BorderSide(color: Colours.errorColour, width: 1.5),
     ),
   );
 
   ListTileThemeData _listTileThemeData({
     required ColorScheme colorScheme,
     required TextTheme textTheme,
-  }) => ListTileThemeData(tileColor: colorScheme.surface, dense: true);
+  }) => ListTileThemeData(
+    dense: true,
+    textColor: colorScheme.onSurface,
+    iconColor: colorScheme.onSurface,
+  );
 
   ExpansionTileThemeData _expansionTileThemeData({
     required ColorScheme colorScheme,
     required TextTheme textTheme,
   }) => ExpansionTileThemeData(
-    backgroundColor: colorScheme.surface,
+    backgroundColor: Colors.transparent,
     iconColor: colorScheme.onSurface,
-    collapsedBackgroundColor: colorScheme.surface,
+    collapsedBackgroundColor: Colors.transparent,
     textColor: colorScheme.onSurface,
     shape: const Border(),
   );
@@ -409,20 +435,39 @@ class ThemeSettingsService extends GetxController {
     required ColorScheme colorScheme,
     required TextTheme textTheme,
   }) => DialogThemeData(
-    backgroundColor: colorScheme.surface,
-    surfaceTintColor: colorScheme.surface,
-    elevation: 1,
+    backgroundColor: Colors.white,
+    surfaceTintColor: Colors.white,
+    shadowColor: Colors.black.withValues(alpha: 0.18),
+    elevation: 6,
     alignment: Alignment.center,
+    insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
     contentTextStyle: textTheme.bodySmall?.copyWith(
-      color: colorScheme.onSurface,
+      color: Colours.charcoalLight,
+      height: 1.4,
     ),
-    titleTextStyle: textTheme.bodyMedium?.copyWith(
-      color: colorScheme.onSurface,
+    titleTextStyle: textTheme.bodyLarge?.copyWith(
+      color: Colours.primaryOne,
+      fontWeight: FontWeight.w700,
     ),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(Dimensions.four),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(Dimensions.eight)),
     ),
   );
+
+  FilledButtonThemeData _filledButtonTheme(TextTheme textTheme) =>
+      FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colours.blueThree,
+          minimumSize: const Size(0, 44),
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(Dimensions.eight)),
+          ),
+        ),
+      );
 
   PopupMenuThemeData _popMenuTheme({
     required ColorScheme colorScheme,
@@ -470,15 +515,27 @@ class ThemeSettingsService extends GetxController {
       ),
     ),
     inputDecorationTheme: const InputDecorationTheme(
-      suffixIconColor: Colors.white,
+      filled: true,
+      fillColor: Colours.searchBarBackground,
+      labelStyle: TextStyle(color: Colours.charcoalLight),
+      hintStyle: TextStyle(color: Colours.charcoalLight),
+      prefixIconColor: Colours.charcoalLight,
+      suffixIconColor: Colours.charcoalLight,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(Dimensions.eight)),
+        borderSide: BorderSide(color: Colours.containerOne),
+      ),
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.white, width: 1.5),
+        borderRadius: BorderRadius.all(Radius.circular(Dimensions.eight)),
+        borderSide: BorderSide(color: Colours.blueThree, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.white, width: 1.5),
+        borderRadius: BorderRadius.all(Radius.circular(Dimensions.eight)),
+        borderSide: BorderSide(color: Colours.errorColour),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.white, width: 1.5),
+        borderRadius: BorderRadius.all(Radius.circular(Dimensions.eight)),
+        borderSide: BorderSide(color: Colours.errorColour, width: 1.5),
       ),
     ),
     textStyle: textTheme.bodySmall,
@@ -566,11 +623,10 @@ class ThemeSettingsService extends GetxController {
   TextButtonThemeData _textButtonThemeData(TextTheme textTheme) =>
       TextButtonThemeData(
         style: TextButton.styleFrom(
-          iconColor: Colors.white,
-          foregroundColor: Colors.white,
-          textStyle: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w400,
-            decoration: TextDecoration.underline,
+          iconColor: Colours.blueThree,
+          foregroundColor: Colours.blueThree,
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
           ),
         ),
       );

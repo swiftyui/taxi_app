@@ -4,7 +4,7 @@ import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dar
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
-import 'package:TaxiApp/src/core/widgets/loaders/generic_loader.dart';
+import 'package:TaxiApp/src/core/widgets/loaders/hambago_shimmer.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_item_widget.dart';
 import 'package:TaxiApp/src/features/landing/widgets/journey_details_widget.dart';
 import 'package:TaxiApp/src/features/landing/widgets/selected_route_details_widget.dart';
@@ -92,7 +92,7 @@ class LandingBottomSheet extends StatelessWidget {
             ).paddingOnly(bottom: Dimensions.eight, left: Dimensions.eight),
 
             _taxiRoutesProvider.isLoading.value
-                ? const GenericLoader()
+                ? const TaxiRoutesShimmer()
                 : _taxiRoutesProvider.errorMessage.value != null
                 ? _RouteStatus(
                     message: _taxiRoutesProvider.errorMessage.value!,
