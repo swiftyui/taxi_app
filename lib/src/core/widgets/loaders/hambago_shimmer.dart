@@ -94,12 +94,16 @@ class RatingShimmer extends StatelessWidget {
   const RatingShimmer({super.key});
 
   @override
-  Widget build(BuildContext context) => const HambaGoShimmer(
+  Widget build(BuildContext context) => HambaGoShimmer(
     child: Row(
       children: [
-        ShimmerBlock(width: 112, height: 20, radius: 10),
-        SizedBox(width: 8),
-        ShimmerBlock(width: 58, height: 12),
+        for (var index = 0; index < 5; index++)
+          const Padding(
+            padding: EdgeInsets.only(right: 2),
+            child: Icon(Icons.star_rounded, color: Colors.white, size: 21),
+          ),
+        const SizedBox(width: 6),
+        const ShimmerBlock(width: 48, height: 11),
       ],
     ),
   );

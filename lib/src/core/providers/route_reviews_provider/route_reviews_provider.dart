@@ -1,8 +1,25 @@
+import 'package:TaxiApp/src/core/providers/hamba_points_provider/hamba_points_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/taxi_route_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+
+class RouteReview {
+  const RouteReview({
+    required this.userId,
+    required this.userName,
+    required this.rating,
+    required this.comment,
+    this.updatedAt,
+  });
+
+  final String userId;
+  final String userName;
+  final double rating;
+  final String comment;
+  final DateTime? updatedAt;
+}
 
 class RouteRatingSummary {
   const RouteRatingSummary({
@@ -10,6 +27,7 @@ class RouteRatingSummary {
     required this.reviewCount,
     this.userRating,
     this.userComment,
+    this.reviews = const [],
   });
 
   static const empty = RouteRatingSummary(average: 0, reviewCount: 0);
@@ -18,6 +36,7 @@ class RouteRatingSummary {
   final int reviewCount;
   final double? userRating;
   final String? userComment;
+  final List<RouteReview> reviews;
 }
 
 class RouteReviewsProvider extends GetxController {
@@ -37,6 +56,7 @@ class RouteReviewsProvider extends GetxController {
       <int, RouteRatingSummary>{}.obs;
   final RxSet<int> loadingRouteIds = <int>{}.obs;
   final RxBool isSubmitting = false.obs;
+  final RxBool lastReviewEarnedPoint = false.obs;
   final RxnString errorMessage = RxnString();
 
   Future<void> loadSummary(TaxiRouteModel route) async {
@@ -50,19 +70,38 @@ class RouteReviewsProvider extends GetxController {
       var total = 0.0;
       double? userRating;
       String? userComment;
+      final reviews = <RouteReview>[];
       for (final document in snapshot.docs) {
         final data = document.data();
-        total += (data['rating'] as num).toDouble();
+        final rating = (data['rating'] as num).toDouble();
+        total += rating;
+        reviews.add(
+          RouteReview(
+            userId: document.id,
+            userName: data['userName'] as String? ?? 'HambaGo traveller',
+            rating: rating,
+            comment: data['comment'] as String? ?? '',
+            updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+          ),
+        );
         if (document.id == _auth.currentUser?.uid) {
-          userRating = (data['rating'] as num).toDouble();
+          userRating = rating;
           userComment = data['comment'] as String?;
         }
       }
+      reviews.sort(
+        (left, right) =>
+            (right.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+                .compareTo(
+                  left.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+                ),
+      );
       summaries[featureId] = RouteRatingSummary(
         average: snapshot.docs.isEmpty ? 0 : total / snapshot.docs.length,
         reviewCount: snapshot.docs.length,
         userRating: userRating,
         userComment: userComment,
+        reviews: reviews,
       );
     } on FirebaseException catch (error, stackTrace) {
       debugPrint('Unable to load route reviews: $error\n$stackTrace');
@@ -90,18 +129,42 @@ class RouteReviewsProvider extends GetxController {
     try {
       isSubmitting.value = true;
       errorMessage.value = null;
-      await _reviews(route).doc(user.uid).set({
-        'userId': user.uid,
-        'userName': user.displayName ?? 'HambaGo traveller',
-        'rating': rating,
-        'comment': comment.trim(),
-        'routeId': route.properties.route_id,
-        'featureId': route.properties.fid,
-        'originName': route.properties.originname,
-        'destinationName': route.properties.destname,
-        'associationName': route.properties.assocname,
-        'updatedAt': FieldValue.serverTimestamp(),
+      lastReviewEarnedPoint.value = false;
+      final reviewReference = _reviews(route).doc(user.uid);
+      final awardReference = _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('hambaPointAwards')
+          .doc('review_${route.properties.fid}');
+      final awardedPoint = await _firestore.runTransaction((transaction) async {
+        final existingAward = await transaction.get(awardReference);
+        transaction.set(reviewReference, {
+          'userId': user.uid,
+          'userName': user.displayName ?? 'HambaGo traveller',
+          'rating': rating,
+          'comment': comment.trim(),
+          'routeId': route.properties.route_id,
+          'featureId': route.properties.fid,
+          'originName': route.properties.originname,
+          'destinationName': route.properties.destname,
+          'associationName': route.properties.assocname,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        if (!existingAward.exists) {
+          transaction.set(awardReference, {
+            'type': 'routeReview',
+            'featureId': route.properties.fid,
+            'points': 1,
+            'awardedAt': FieldValue.serverTimestamp(),
+          });
+          return true;
+        }
+        return false;
       });
+      lastReviewEarnedPoint.value = awardedPoint;
+      if (awardedPoint) {
+        await HambaPointsProvider.create().reloadPoints();
+      }
       await loadSummary(route);
       return true;
     } on FirebaseException catch (error, stackTrace) {

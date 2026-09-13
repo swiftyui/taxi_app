@@ -47,5 +47,25 @@ service cloud.firestore {
         && request.resource.data.routes.size() <= 10
         && request.resource.data.status in ['inProgress', 'completed'];
     }
+
+    match /users/{userId}/hambaPointAwards/{awardId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'type',
+          'featureId',
+          'points',
+          'awardedAt'
+        ])
+        && request.resource.data.type == 'routeReview'
+        && request.resource.data.featureId is int
+        && awardId == 'review_' + string(request.resource.data.featureId)
+        && request.resource.data.points == 1
+        && existsAfter(
+          /databases/$(database)/documents/routeReviews/$(request.resource.data.featureId)/reviews/$(userId)
+        );
+      allow update, delete: if false;
+    }
   }
 }

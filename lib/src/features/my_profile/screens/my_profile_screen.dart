@@ -1,9 +1,11 @@
-import 'package:TaxiApp/src/core/providers/my_profile_provider/my_profile_provider.dart';
 import 'package:TaxiApp/src/core/models/travel_log_entry.dart';
+import 'package:TaxiApp/src/core/providers/hamba_points_provider/hamba_points_provider.dart';
+import 'package:TaxiApp/src/core/providers/my_profile_provider/my_profile_provider.dart';
 import 'package:TaxiApp/src/core/providers/travel_log_provider/travel_log_provider.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/buttons/primary_button.dart';
+import 'package:TaxiApp/src/core/widgets/loaders/hambago_shimmer.dart';
 import 'package:TaxiApp/src/features/my_profile/widgets/profile_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -353,6 +355,9 @@ class _SignedInProfileState extends State<_SignedInProfile> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _SignedInHeader(user: widget.user),
+            _HambaPointsCard(
+              provider: HambaPointsProvider.create(),
+            ).paddingOnly(top: Dimensions.twelve),
             if (widget.user.email != null && !widget.user.emailVerified)
               _EmailVerificationCard(
                 onVerify: widget.provider.sendVerificationEmail,
@@ -916,6 +921,95 @@ class _ProfileCard extends StatelessWidget {
     ),
     clipBehavior: Clip.antiAlias,
     child: Padding(padding: padding, child: child),
+  );
+}
+
+class _HambaPointsCard extends StatelessWidget {
+  const _HambaPointsCard({required this.provider});
+
+  final HambaPointsProvider provider;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: const Color(0xFFFFF8E5),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(Dimensions.eight),
+      side: const BorderSide(color: Color(0xFFF0D88B)),
+    ),
+    child: InkWell(
+      onTap: provider.reloadPoints,
+      borderRadius: BorderRadius.circular(Dimensions.eight),
+      child: Padding(
+        padding: const EdgeInsets.all(Dimensions.twelve),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: Colours.yellow,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.workspace_premium_rounded,
+                color: Colours.primaryOne,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: Dimensions.twelve),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'HambaPoints',
+                    style: TextStyle(
+                      color: Colours.primaryOne,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Earn rewards by helping the taxi community.',
+                    style: TextStyle(
+                      color: Colours.charcoalLight,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Obx(
+              () => provider.isLoading.value
+                  ? const HambaGoShimmer(
+                      child: ShimmerBlock(width: 38, height: 24, radius: 12),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${provider.points.value}',
+                          style: const TextStyle(
+                            color: Colours.primaryOne,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const Text(
+                          'points',
+                          style: TextStyle(
+                            color: Colours.charcoalLight,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+    ),
   );
 }
 

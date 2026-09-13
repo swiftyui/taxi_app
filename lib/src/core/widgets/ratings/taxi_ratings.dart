@@ -68,27 +68,47 @@ class _TaxiRatingsState extends State<TaxiRatings> {
             if (isLoading)
               const Expanded(child: RatingShimmer())
             else ...[
-              RatingBarIndicator(
-                rating: summary.average,
-                itemCount: 5,
-                itemSize: 20,
-                unratedColor: Colors.grey.shade300,
-                itemBuilder: (_, _) =>
-                    const Icon(Icons.star_rounded, color: Colors.amber),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                summary.reviewCount == 0
-                    ? 'No reviews yet'
-                    : '${summary.average.toStringAsFixed(1)} '
-                          '(${summary.reviewCount})',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colours.charcoalLight),
+              Expanded(
+                child: InkWell(
+                  onTap: () => _openReviewList(summary),
+                  borderRadius: BorderRadius.circular(Dimensions.eight),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RatingBarIndicator(
+                        rating: summary.average,
+                        itemCount: 5,
+                        itemSize: 20,
+                        unratedColor: Colors.grey.shade300,
+                        itemBuilder: (_, _) =>
+                            const Icon(Icons.star_rounded, color: Colors.amber),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          summary.reviewCount == 0
+                              ? 'No reviews yet'
+                              : '${summary.average.toStringAsFixed(1)} '
+                                    '(${summary.reviewCount})',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colours.charcoalLight),
+                        ),
+                      ),
+                      if (summary.reviewCount > 0)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 3),
+                          child: Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: Colours.charcoalLight,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ],
             if (!isLoading) ...[
-              const Spacer(),
               TextButton.icon(
                 onPressed: _openReview,
                 icon: const Icon(Icons.rate_review_outlined, size: 16),
@@ -144,6 +164,19 @@ class _TaxiRatingsState extends State<TaxiRatings> {
         reviews: _reviews,
       ),
       barrierDismissible: false,
+    );
+  }
+
+  Future<void> _openReviewList(RouteRatingSummary summary) async {
+    await Get.bottomSheet<void>(
+      _RouteReviewsSheet(route: widget.route, summary: summary),
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(Dimensions.sixteen),
+        ),
+      ),
     );
   }
 }
@@ -217,6 +250,32 @@ class _RouteReviewDialogState extends State<_RouteReviewDialog> {
                 const Icon(Icons.star_rounded, color: Colors.amber),
             onRatingUpdate: (rating) => setState(() => _rating = rating),
           ),
+          if (widget.initialRating == 0) ...[
+            const SizedBox(height: Dimensions.twelve),
+            Container(
+              padding: const EdgeInsets.all(Dimensions.eight),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF4D6),
+                borderRadius: BorderRadius.circular(Dimensions.eight),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.monetization_on_outlined,
+                    size: 18,
+                    color: Color(0xFF8A5A00),
+                  ),
+                  SizedBox(width: Dimensions.eight),
+                  Expanded(
+                    child: Text(
+                      'Earn 1 HambaPoint for your first review of this route.',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: Dimensions.twelve),
           TextField(
             controller: _commentController,
@@ -274,8 +333,196 @@ class _RouteReviewDialogState extends State<_RouteReviewDialog> {
     );
     if (saved) {
       Get.back<void>();
+      if (widget.reviews.lastReviewEarnedPoint.value) {
+        Get.snackbar(
+          'HambaPoint earned',
+          'Thanks for helping the HambaGo community. You earned 1 point.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colours.primaryOne,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(Dimensions.twelve),
+        );
+      }
     }
   }
+}
+
+class _RouteReviewsSheet extends StatelessWidget {
+  const _RouteReviewsSheet({required this.route, required this.summary});
+
+  final TaxiRouteModel route;
+  final RouteRatingSummary summary;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.72,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 38,
+              height: 4,
+              margin: const EdgeInsets.only(top: 10),
+              decoration: BoxDecoration(
+                color: Colours.containerOne,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.forum_outlined,
+                  color: Colours.blueThree,
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Traveller reviews',
+                        style: TextStyle(
+                          color: Colours.primaryOne,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        '${route.properties.originname} to '
+                        '${route.properties.destname}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colours.charcoalLight,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: Get.back,
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          if (summary.reviews.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(28),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.star_border_rounded,
+                    size: 38,
+                    color: Colours.containerOne,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'No reviews yet',
+                    style: TextStyle(
+                      color: Colours.primaryOne,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Be the first traveller to share an experience.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colours.charcoalLight,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Flexible(
+              child: ListView.separated(
+                padding: const EdgeInsets.all(Dimensions.sixteen),
+                itemCount: summary.reviews.length,
+                separatorBuilder: (_, _) => const Divider(height: 20),
+                itemBuilder: (context, index) =>
+                    _ReviewTile(review: summary.reviews[index]),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _ReviewTile extends StatelessWidget {
+  const _ReviewTile({required this.review});
+
+  final RouteReview review;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      CircleAvatar(
+        radius: 18,
+        backgroundColor: const Color(0xFFE6F1F5),
+        child: Text(
+          review.userName.trim().isEmpty
+              ? 'H'
+              : review.userName.trim()[0].toUpperCase(),
+          style: const TextStyle(
+            color: Colours.blueThree,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              review.userName,
+              style: const TextStyle(
+                color: Colours.primaryOne,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 3),
+            RatingBarIndicator(
+              rating: review.rating,
+              itemCount: 5,
+              itemSize: 16,
+              unratedColor: Colors.grey.shade300,
+              itemBuilder: (_, _) =>
+                  const Icon(Icons.star_rounded, color: Colors.amber),
+            ),
+            if (review.comment.trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                review.comment,
+                style: const TextStyle(
+                  color: Colours.charcoalLight,
+                  fontSize: 12,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
 class _ReviewDialogHeading extends StatelessWidget {
