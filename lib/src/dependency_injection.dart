@@ -1,4 +1,5 @@
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
+import 'package:TaxiApp/src/core/providers/driver_account_provider/driver_account_provider.dart';
 import 'package:TaxiApp/src/core/providers/hamba_points_provider/hamba_points_provider.dart';
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
 import 'package:TaxiApp/src/core/providers/my_profile_provider/my_profile_provider.dart';
@@ -11,6 +12,7 @@ Future<void> dependencyInjection() async {
   MapsProvider.create();
   UserLocationProvider.create();
   TaxiRoutesProvider.create();
+  DriverAccountProvider.create();
   HambaPointsProvider.create();
   TravelLogProvider.create();
   RouteReviewsProvider.create();

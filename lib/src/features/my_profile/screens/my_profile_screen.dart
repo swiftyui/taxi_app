@@ -1,7 +1,9 @@
 import 'package:TaxiApp/src/core/models/travel_log_entry.dart';
 import 'package:TaxiApp/src/core/providers/hamba_points_provider/hamba_points_provider.dart';
+import 'package:TaxiApp/src/core/providers/driver_account_provider/driver_account_provider.dart';
 import 'package:TaxiApp/src/core/providers/my_profile_provider/my_profile_provider.dart';
 import 'package:TaxiApp/src/core/providers/travel_log_provider/travel_log_provider.dart';
+import 'package:TaxiApp/src/core/routes/routes.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/buttons/primary_button.dart';
@@ -364,6 +366,9 @@ class _SignedInProfileState extends State<_SignedInProfile> {
               ).paddingOnly(top: Dimensions.sixteen),
             _TravelLogCard(
               provider: TravelLogProvider.create(),
+            ).paddingOnly(top: Dimensions.sixteen),
+            _DriverAccountCard(
+              provider: DriverAccountProvider.create(),
             ).paddingOnly(top: Dimensions.sixteen),
             _ProfileCard(
               child: Form(
@@ -1011,6 +1016,76 @@ class _HambaPointsCard extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _DriverAccountCard extends StatelessWidget {
+  const _DriverAccountCard({required this.provider});
+
+  final DriverAccountProvider provider;
+
+  @override
+  Widget build(BuildContext context) => Obx(() {
+    final profile = provider.profile.value;
+    final routeCount = provider.routes.length;
+    return _ProfileCard(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        onTap: () => Get.toNamed(AppRoutes.driverAccount.value),
+        child: Padding(
+          padding: const EdgeInsets.all(Dimensions.twelve),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF4D6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.local_taxi_rounded,
+                  color: Color(0xFF8A5A00),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: Dimensions.twelve),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile == null ? 'Become a driver' : 'Driver account',
+                      style: const TextStyle(
+                        color: Colours.primaryOne,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      profile == null
+                          ? 'Register your taxi and create new routes.'
+                          : '${profile.vehicleRegistration} · '
+                                '$routeCount submitted '
+                                'route${routeCount == 1 ? '' : 's'}',
+                      style: const TextStyle(
+                        color: Colours.charcoalLight,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Colours.charcoalLight,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  });
 }
 
 class _TravelLogCard extends StatelessWidget {

@@ -1,6 +1,7 @@
 import 'package:TaxiApp/src/core/routes/permissions_middleware.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_screen.dart';
 import 'package:TaxiApp/src/features/my_profile/screens/my_profile_screen.dart';
+import 'package:TaxiApp/src/features/my_profile/screens/driver_account_screen.dart';
 import 'package:TaxiApp/src/features/permissions_carousel/screens/permissions_carousel_screen.dart';
 import 'package:TaxiApp/src/features/search_routes/screens/search_routes_screen.dart';
 import 'package:get/get.dart';
@@ -9,7 +10,8 @@ enum AppRoutes {
   root('/'),
   permissionsCarousel('/permissions-carousel'),
   searchRoutes('/search-routes'),
-  myProfile('/my-profile');
+  myProfile('/my-profile'),
+  driverAccount('/driver-account');
 
   const AppRoutes(this.value);
 
@@ -36,5 +38,9 @@ final pages = [
     name: AppRoutes.myProfile.value,
     page: () => const MyProfile(),
     middlewares: [],
+  ),
+  GetPage(
+    name: AppRoutes.driverAccount.value,
+    page: () => const DriverAccountScreen(),
   ),
 ];

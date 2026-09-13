@@ -67,5 +67,98 @@ service cloud.firestore {
         );
       allow update, delete: if false;
     }
+
+    match /users/{userId}/driverAccount/profile {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'contactNumber',
+          'driverLicenceNumber',
+          'operatingPermitNumber',
+          'associationName',
+          'vehicleRegistration',
+          'vehicleMake',
+          'vehicleModel',
+          'vehicleColor',
+          'seatCapacity',
+          'updatedAt'
+        ])
+        && request.resource.data.contactNumber is string
+        && request.resource.data.contactNumber.size() >= 10
+        && request.resource.data.contactNumber.size() <= 20
+        && request.resource.data.driverLicenceNumber is string
+        && request.resource.data.driverLicenceNumber.size() >= 2
+        && request.resource.data.driverLicenceNumber.size() <= 50
+        && request.resource.data.operatingPermitNumber is string
+        && request.resource.data.operatingPermitNumber.size() >= 2
+        && request.resource.data.operatingPermitNumber.size() <= 50
+        && request.resource.data.associationName is string
+        && request.resource.data.associationName.size() >= 2
+        && request.resource.data.associationName.size() <= 120
+        && request.resource.data.vehicleRegistration is string
+        && request.resource.data.vehicleRegistration.size() >= 2
+        && request.resource.data.vehicleRegistration.size() <= 20
+        && request.resource.data.vehicleMake is string
+        && request.resource.data.vehicleMake.size() <= 50
+        && request.resource.data.vehicleModel is string
+        && request.resource.data.vehicleModel.size() <= 50
+        && request.resource.data.vehicleColor is string
+        && request.resource.data.vehicleColor.size() <= 30
+        && request.resource.data.seatCapacity is int
+        && request.resource.data.seatCapacity >= 1
+        && request.resource.data.seatCapacity <= 40;
+      allow delete: if false;
+    }
+
+    match /users/{userId}/driverRoutes/{routeId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && exists(
+          /databases/$(database)/documents/users/$(userId)/driverAccount/profile
+        )
+        && request.resource.data.keys().hasOnly([
+          'driverId',
+          'originName',
+          'destinationName',
+          'origin',
+          'destination',
+          'fare',
+          'serviceDays',
+          'notes',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.driverId == userId
+        && request.resource.data.originName is string
+        && request.resource.data.originName.size() >= 3
+        && request.resource.data.originName.size() <= 160
+        && request.resource.data.destinationName is string
+        && request.resource.data.destinationName.size() >= 3
+        && request.resource.data.destinationName.size() <= 160
+        && request.resource.data.origin is latlng
+        && request.resource.data.destination is latlng
+        && request.resource.data.fare is number
+        && request.resource.data.fare > 0
+        && request.resource.data.fare <= 10000
+        && request.resource.data.serviceDays is list
+        && request.resource.data.serviceDays.size() >= 1
+        && request.resource.data.serviceDays.size() <= 7
+        && request.resource.data.serviceDays.hasOnly([
+          'Mon',
+          'Tue',
+          'Wed',
+          'Thu',
+          'Fri',
+          'Sat',
+          'Sun'
+        ])
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 300
+        && request.resource.data.status == 'pendingReview';
+      allow update, delete: if false;
+    }
   }
 }
