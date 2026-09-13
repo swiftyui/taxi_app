@@ -114,7 +114,9 @@ class _SelectedRouteDetailsWidgetState
                   NearbyTaxiSpotsAvailable(
                     route: _actionsProvider.selectedRoute.value!,
                   ).paddingOnly(top: Dimensions.eight),
-                  TaxiRatings().paddingOnly(top: Dimensions.eight),
+                  TaxiRatings(
+                    route: _actionsProvider.selectedRoute.value!.model,
+                  ).paddingOnly(top: Dimensions.eight),
                   ExpandableItem(
                     title: Get.appLocalizations.moreDetails,
                     child: Column(

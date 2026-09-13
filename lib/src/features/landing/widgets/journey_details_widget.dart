@@ -6,6 +6,7 @@ import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/buttons/primary_button.dart';
+import 'package:TaxiApp/src/core/widgets/ratings/taxi_ratings.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -117,6 +118,28 @@ class JourneyDetailsWidget extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ).paddingOnly(bottom: Dimensions.twelve),
+            Text(
+              'Rate your taxi route${journey.taxiLegs.length == 1 ? '' : 's'}',
+              style: Get.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ).paddingOnly(bottom: Dimensions.eight),
+            for (final leg in journey.taxiLegs)
+              Container(
+                padding: const EdgeInsets.all(Dimensions.twelve),
+                margin: const EdgeInsets.only(bottom: Dimensions.eight),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colours.containerOne),
+                  borderRadius: BorderRadius.circular(Dimensions.eight),
+                ),
+                child: TaxiRatings(
+                  route: leg.route,
+                  title:
+                      '${leg.route.properties.originname} to '
+                      '${leg.route.properties.destname}',
+                ),
+              ),
             PrimaryButton(
               text: switch (_actionsProvider.selectedAction.value) {
                 ActionType.journeyStarted =>

@@ -69,7 +69,9 @@ class NearbyTaxiItemWidget extends StatelessWidget {
                     NearbyTaxiSpotsAvailable(
                       route: route,
                     ).paddingOnly(top: Dimensions.eight),
-                    TaxiRatings().paddingOnly(top: Dimensions.eight),
+                    TaxiRatings(
+                      route: route.model,
+                    ).paddingOnly(top: Dimensions.eight),
                     ExpandableItem(
                       title: Get.appLocalizations.moreDetails,
                       child: Column(
@@ -94,10 +96,6 @@ class NearbyTaxiItemWidget extends StatelessWidget {
                       label: Get.appLocalizations.requestARide,
                       icon: Icons.local_taxi_rounded,
                     ).paddingOnly(bottom: Dimensions.eight),
-                    TaxiAction(
-                      label: Get.appLocalizations.leaveAReview,
-                      icon: Icons.local_taxi_rounded,
-                    ),
                   ],
                 ),
               ],

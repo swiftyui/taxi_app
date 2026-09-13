@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/extensions/rx_worker.dart';
 import 'package:TaxiApp/src/core/models/destination_search_result.dart';
@@ -5,6 +7,7 @@ import 'package:TaxiApp/src/core/models/taxi_journey.dart';
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/nearby_taxi_route_model.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
+import 'package:TaxiApp/src/core/providers/travel_log_provider/travel_log_provider.dart';
 import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:TaxiApp/src/core/services/journey_progress_service.dart';
 import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
@@ -26,6 +29,7 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
   final RxInt activeJourneyStepIndex = 0.obs;
   final RxDouble distanceToNextStepMeters = 0.0.obs;
   final RxBool isJourneyComplete = false.obs;
+  Future<String>? _activeTravelLog;
 
   @override
   void onInit() {
@@ -128,6 +132,9 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
     }
     activeJourneyStepIndex.value = 0;
     isJourneyComplete.value = false;
+    _activeTravelLog = TravelLogProvider.create().recordJourneyStart(
+      activeJourney,
+    );
     selectedAction.value = ActionType.journeyStarted;
     final currentPosition = UserLocationProvider.create().userLocation.value;
     if (currentPosition != null) {
@@ -172,9 +179,20 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
 
     if (progress.isComplete) {
       selectedAction.value = ActionType.journeyCompleted;
+      unawaited(_completeActiveTravelLog());
     }
     if (progress.stepIndex != previousStepIndex || progress.isComplete) {
       MapsProvider.create().updateMarkers();
     }
+  }
+
+  Future<void> _completeActiveTravelLog() async {
+    final travelLog = _activeTravelLog;
+    if (travelLog == null) {
+      return;
+    }
+    _activeTravelLog = null;
+    final id = await travelLog;
+    await TravelLogProvider.create().markJourneyCompleted(id);
   }
 }

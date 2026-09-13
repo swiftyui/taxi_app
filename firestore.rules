@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /routeReviews/{routeId}/reviews/{userId} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'userName',
+          'rating',
+          'comment',
+          'routeId',
+          'featureId',
+          'originName',
+          'destinationName',
+          'associationName',
+          'updatedAt'
+        ])
+        && request.resource.data.userId == userId
+        && request.resource.data.userName is string
+        && request.resource.data.userName.size() <= 100
+        && request.resource.data.featureId is int
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() <= 500
+        && request.resource.data.routeId is string
+        && request.resource.data.originName is string
+        && request.resource.data.destinationName is string
+        && request.resource.data.associationName is string;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/travelLogs/{logId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.id == logId
+        && request.resource.data.startedAt is string
+        && request.resource.data.originName is string
+        && request.resource.data.destinationName is string
+        && request.resource.data.routes is list
+        && request.resource.data.routes.size() > 0
+        && request.resource.data.routes.size() <= 10
+        && request.resource.data.status in ['inProgress', 'completed'];
+    }
+  }
+}

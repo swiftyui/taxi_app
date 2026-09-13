@@ -35,6 +35,7 @@ dependencies:
   glowy_borders: ^1.0.2
   flutter_rating_bar: ^4.0.1
   firebase_auth: ^6.6.0
+  cloud_firestore: ^6.1.1
   firebase_storage: ^13.5.0
   image_picker: ^1.2.3
 
