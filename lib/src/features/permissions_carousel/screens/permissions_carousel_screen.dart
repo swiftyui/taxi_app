@@ -25,9 +25,10 @@ class PermissionsCarouselScreen extends StatelessWidget {
         length: permissionsCarouselProvider.permissions.length,
         child: Obx(
           () => Scaffold(
-            appBar: CustomAppBar(
-              backButton: false,
-              textColor: Colours.primaryOne,
+            appBar: HambaGoAppBar(
+              title: 'HambaGo',
+              subtitle: 'A few permissions before you travel',
+              showBackButton: false,
               bottom: TabBar(
                 padding: EdgeInsets.zero,
                 labelPadding: EdgeInsets.zero,

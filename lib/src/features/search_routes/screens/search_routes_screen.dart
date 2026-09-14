@@ -6,6 +6,7 @@ import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_prov
 import 'package:TaxiApp/src/core/services/destination_search_service.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
+import 'package:TaxiApp/src/core/widgets/app_bars/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -74,6 +75,11 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colours.lightSurface,
+    appBar: const HambaGoAppBar(
+      title: 'Search routes',
+      subtitle: 'Find a destination or taxi route',
+    ),
     body: SafeArea(
       bottom: false,
       child: Column(
@@ -85,13 +91,6 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
             ),
             child: Row(
               children: [
-                IconButton(
-                  onPressed: Get.back,
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: Colors.black,
-                  ),
-                ),
                 Expanded(
                   child: TextField(
                     autofocus: true,

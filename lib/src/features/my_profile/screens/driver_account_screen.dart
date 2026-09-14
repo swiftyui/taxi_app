@@ -6,6 +6,7 @@ import 'package:TaxiApp/src/core/providers/ride_requests_provider/ride_requests_
 import 'package:TaxiApp/src/core/routes/routes.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
+import 'package:TaxiApp/src/core/widgets/app_bars/custom_app_bar.dart';
 import 'package:TaxiApp/src/core/widgets/pickers/hambago_time_picker.dart';
 import 'package:TaxiApp/src/features/my_profile/screens/driver_location_picker_screen.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +31,20 @@ class _DriverAccountScreenState extends State<DriverAccountScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Colours.lightSurface,
-    appBar: _DriverAppBar(rideRequestsProvider: _rideRequestsProvider),
+    appBar: HambaGoAppBar(
+      title: 'Driver account',
+      subtitle: 'Manage your HambaGo taxi',
+      actions: [
+        Obx(
+          () => HambaGoAppBarAction(
+            icon: Icons.notifications_none_rounded,
+            tooltip: 'Ride requests',
+            badgeCount: _rideRequestsProvider.driverRequests.length,
+            onPressed: () => Get.toNamed<void>(AppRoutes.rideRequests.value),
+          ),
+        ),
+      ],
+    ),
     body: SafeArea(
       top: false,
       child: Obx(() {
@@ -205,139 +219,6 @@ class _DriverReviewsCard extends StatelessWidget {
       ),
     );
   });
-}
-
-class _DriverAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const _DriverAppBar({required this.rideRequestsProvider});
-
-  final RideRequestsProvider rideRequestsProvider;
-
-  @override
-  Size get preferredSize => const Size.fromHeight(74);
-
-  @override
-  Widget build(BuildContext context) => AppBar(
-    toolbarHeight: preferredSize.height,
-    backgroundColor: Colours.lightSurface,
-    surfaceTintColor: Colors.transparent,
-    shadowColor: Colors.transparent,
-    elevation: 0,
-    scrolledUnderElevation: 0,
-    centerTitle: false,
-    leadingWidth: 66,
-    leading: Padding(
-      padding: const EdgeInsets.only(left: 12, top: 10, bottom: 10),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colours.primaryOne.withValues(alpha: 0.12),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: IconButton(
-          onPressed: Get.back,
-          tooltip: 'Back',
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: Colours.primaryOne,
-            size: 22,
-          ),
-        ),
-      ),
-    ),
-    titleSpacing: 12,
-    title: const Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Driver account',
-          style: TextStyle(
-            color: Colours.primaryOne,
-            fontSize: 19,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.2,
-          ),
-        ),
-        SizedBox(height: 2),
-        Text(
-          'Manage your HambaGo taxi',
-          style: TextStyle(
-            color: Colours.charcoalLight,
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ),
-    actions: [
-      Obx(() {
-        final requestCount = rideRequestsProvider.driverRequests.length;
-        return Padding(
-          padding: const EdgeInsets.only(top: 10, right: 12, bottom: 10),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(Dimensions.twelve),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colours.primaryOne.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  onPressed: () =>
-                      Get.toNamed<void>(AppRoutes.rideRequests.value),
-                  tooltip: 'Ride requests',
-                  icon: const Icon(
-                    Icons.notifications_none_rounded,
-                    color: Colours.blueThree,
-                    size: 22,
-                  ),
-                ),
-              ),
-              if (requestCount > 0)
-                Positioned(
-                  top: -4,
-                  right: -4,
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    decoration: BoxDecoration(
-                      color: Colours.red,
-                      borderRadius: BorderRadius.circular(9),
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      requestCount > 99 ? '99+' : '$requestCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        );
-      }),
-    ],
-  );
 }
 
 class _RideRequestsCard extends StatelessWidget {

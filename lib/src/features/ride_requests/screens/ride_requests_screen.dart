@@ -1,6 +1,7 @@
 import 'package:TaxiApp/src/core/models/ride_request.dart';
 import 'package:TaxiApp/src/core/providers/ride_requests_provider/ride_requests_provider.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
+import 'package:TaxiApp/src/core/widgets/app_bars/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -13,7 +14,10 @@ class RideRequestsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Colours.lightSurface,
-    appBar: AppBar(title: const Text('Ride requests')),
+    appBar: const HambaGoAppBar(
+      title: 'Ride requests',
+      subtitle: 'Your rides and incoming requests',
+    ),
     body: Obx(() {
       if ((_provider.isLoadingRequests.value ||
               _provider.isLoadingMyRequests.value) &&

@@ -8,6 +8,7 @@ import 'package:TaxiApp/src/core/routes/routes.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/buttons/primary_button.dart';
+import 'package:TaxiApp/src/core/widgets/app_bars/custom_app_bar.dart';
 import 'package:TaxiApp/src/core/widgets/loaders/hambago_shimmer.dart';
 import 'package:TaxiApp/src/features/my_profile/widgets/profile_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -28,25 +29,9 @@ class _MyProfileState extends State<MyProfile> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: _ProfileStyles.background,
-    appBar: AppBar(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      elevation: 0,
-      scrolledUnderElevation: 1,
-      shadowColor: Colors.black26,
-      leading: IconButton(
-        onPressed: Get.back,
-        icon: const Icon(Icons.arrow_back_rounded),
-        color: _ProfileStyles.textPrimary,
-      ),
-      title: const Text(
-        'Profile',
-        style: TextStyle(
-          color: _ProfileStyles.textPrimary,
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+    appBar: const HambaGoAppBar(
+      title: 'Profile',
+      subtitle: 'Account, rewards, and travel',
     ),
     body: Obx(() {
       final user = _provider.user.value;

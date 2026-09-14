@@ -2,6 +2,7 @@ import 'package:TaxiApp/src/core/models/driver_route_location.dart';
 import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
+import 'package:TaxiApp/src/core/widgets/app_bars/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
@@ -55,19 +56,10 @@ class _DriverLocationPickerScreenState
     final hasUserLocation =
         UserLocationProvider.create().userLocation.value != null;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.title,
-          style: const TextStyle(
-            color: Colours.primaryOne,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        leading: IconButton(
-          onPressed: Get.back,
-          icon: const Icon(Icons.close_rounded),
-        ),
+      appBar: HambaGoAppBar(
+        title: widget.title,
+        subtitle: 'Tap the map or drag the pin',
+        leadingIcon: Icons.close_rounded,
       ),
       body: Stack(
         children: [
