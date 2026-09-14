@@ -1,16 +1,17 @@
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
+import 'package:TaxiApp/src/core/theme/constants/colours.dart';
+import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
+import 'package:TaxiApp/src/core/widgets/buttons/primary_button.dart';
 import 'package:TaxiApp/src/core/widgets/expandables/expandable_item.dart';
 import 'package:TaxiApp/src/core/widgets/ratings/taxi_ratings.dart';
+import 'package:TaxiApp/src/features/favorite_routes/widgets/favorite_route_button.dart';
 import 'package:TaxiApp/src/features/landing/enums/day_of_week.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_spots_available.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_week_pill.dart';
 import 'package:TaxiApp/src/features/landing/widgets/ride_request_action.dart';
 import 'package:TaxiApp/src/features/landing/widgets/taxi_actions.dart';
-import 'package:TaxiApp/src/features/favorite_routes/widgets/favorite_route_button.dart';
 import 'package:flutter/material.dart';
-import 'package:TaxiApp/src/core/theme/constants/colours.dart';
-import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:get/get.dart';
 
 class SelectedRouteDetailsWidget extends StatefulWidget {
@@ -173,7 +174,8 @@ class _SelectedRouteDetailsWidgetState
                   RideRequestAction(
                     route: _actionsProvider.selectedRoute.value!,
                   ).paddingOnly(bottom: Dimensions.eight),
-                  _viewRouteButton.paddingOnly(top: Dimensions.eight),
+                  _startJourneyButton.paddingOnly(top: Dimensions.eight),
+                  _viewRouteButton.paddingOnly(top: Dimensions.twelve),
                 ],
               ),
             ],
@@ -183,6 +185,19 @@ class _SelectedRouteDetailsWidgetState
           right: Dimensions.eight,
           bottom: Dimensions.eight,
         ),
+  );
+
+  Widget get _startJourneyButton => PrimaryButton(
+    text: Get.appLocalizations.startJourney,
+    buttonColor: Colours.primaryOne,
+    borderColor: Colours.primaryOne,
+    buttonHeight: 48,
+    buttonWidth: double.infinity,
+    borderRadius: BorderRadius.circular(14),
+    icon: const Icon(Icons.navigation_rounded, color: Colors.white, size: 20),
+    onTap: () => _actionsProvider.startJourneyOnRoute(
+      _actionsProvider.selectedRoute.value!,
+    ),
   );
 
   Widget get _viewRouteButton => TaxiAction(

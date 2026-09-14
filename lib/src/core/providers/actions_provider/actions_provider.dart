@@ -130,6 +130,79 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
     }
   }
 
+  Future<void> startJourneyOnRoute(NearbyTaxiRouteModel route) async {
+    if (isPlanningJourney.value) {
+      return;
+    }
+
+    final destination = DestinationSearchResult(
+      label: route.destinationName.trim().isEmpty
+          ? 'Taxi route destination'
+          : route.destinationName.trim(),
+      subtitle: 'Via route ${route.routeId}',
+      position: route.destinationPoint,
+    );
+    final mapsProvider = MapsProvider.create();
+    selectedRoute.value = route;
+    selectedDestination.value = destination;
+    journey.value = null;
+    journeyError.value = null;
+    selectedAction.value = ActionType.planningJourney;
+    isPlanningJourney.value = true;
+    await mapsProvider.updateMarkers();
+
+    try {
+      final locationProvider = UserLocationProvider.create();
+      final position =
+          locationProvider.userLocation.value ??
+          await locationProvider.refreshLocation(requestPermission: true);
+      if (position == null) {
+        journeyError.value =
+            locationProvider.errorMessage.value ??
+            'Your current location is required to start this journey.';
+        return;
+      }
+
+      final plannedJourney = await const TaxiRoutingService()
+          .findJourneyForRouteAsync(
+            origin: LatLng(position.latitude, position.longitude),
+            destination: destination,
+            route: route.model,
+          );
+      if (plannedJourney == null) {
+        journeyError.value =
+            'This route cannot be joined from your current location in its '
+            'travel direction. Move closer to the route and try again.';
+        return;
+      }
+
+      journey.value = await GoogleWalkingDirectionsService().enrichJourney(
+        plannedJourney,
+      );
+      selectedAction.value = ActionType.journeyReady;
+      startJourney();
+    } catch (_) {
+      journeyError.value =
+          'Unable to start a journey on this route. Please try again.';
+    } finally {
+      isPlanningJourney.value = false;
+      await mapsProvider.updateMarkers();
+    }
+  }
+
+  Future<void> retryJourneyPlanning() async {
+    final route = selectedRoute.value;
+    if (route != null) {
+      await startJourneyOnRoute(route);
+      return;
+    }
+
+    final destination = selectedDestination.value;
+    if (destination != null) {
+      await planJourney(destination);
+    }
+  }
+
   void startJourney() {
     final activeJourney = journey.value;
     if (activeJourney == null) {
@@ -155,6 +228,7 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
   void clearJourney() {
     unawaited(RouteOccupancyProvider.create().leaveRoute());
     _clearJourneyState();
+    selectedRoute.value = null;
     selectedAction.value = null;
     MapsProvider.create().updateMarkers();
   }

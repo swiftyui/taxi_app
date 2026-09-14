@@ -62,7 +62,7 @@ class JourneyDetailsWidget extends StatelessWidget {
               borderColor: Colours.primaryOne,
               onTap: destination == null
                   ? null
-                  : () => _actionsProvider.planJourney(destination),
+                  : _actionsProvider.retryJourneyPlanning,
             ),
           ] else if (journey != null) ...[
             if (_actionsProvider.selectedAction.value ==

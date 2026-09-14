@@ -108,6 +108,77 @@ void main() {
       expect(journey, isNull);
     });
 
+    test('builds a journey using only the explicitly selected route', () {
+      final selectedRoute = _routeWithCoordinates(
+        [
+          [28.0000, -25.0000],
+          [28.0100, -25.0000],
+          [28.0200, -25.0000],
+        ],
+        id: 11,
+        routeId: 'SELECTED',
+      );
+      final alternativeRoute = _routeWithCoordinates(
+        [
+          [28.0001, -25.0001],
+          [28.0101, -25.0001],
+          [28.0201, -25.0001],
+        ],
+        id: 12,
+        routeId: 'ALTERNATIVE',
+      );
+      const destination = DestinationSearchResult(
+        label: 'Selected route destination',
+        subtitle: 'Pretoria',
+        position: LatLng(-25.0000, 28.0200),
+      );
+
+      final unconstrainedJourney = const TaxiRoutingService().findBestJourney(
+        origin: const LatLng(-25.0001, 28.0001),
+        destination: destination,
+        routes: [alternativeRoute, selectedRoute],
+      );
+      final selectedJourney = const TaxiRoutingService().findJourneyForRoute(
+        origin: const LatLng(-25.0001, 28.0001),
+        destination: destination,
+        route: selectedRoute,
+      );
+
+      expect(unconstrainedJourney, isNotNull);
+      expect(selectedJourney, isNotNull);
+      expect(selectedJourney!.taxiLegs, hasLength(1));
+      expect(selectedJourney.taxiLegs.single.route.id, selectedRoute.id);
+      expect(
+        selectedJourney.taxiLegs.single.route.id,
+        isNot(alternativeRoute.id),
+      );
+    });
+
+    test('rejects a selected route when it would require reverse travel', () {
+      final selectedRoute = _routeWithCoordinates([
+        [28.0000, -25.0000],
+        [28.0100, -25.0000],
+        [28.0200, -25.0000],
+        [28.0300, -25.0000],
+      ]);
+
+      final journey =
+          const TaxiRoutingService(
+            maxBoardingWalkMeters: 500,
+            maxFinalWalkMeters: 500,
+          ).findJourneyForRoute(
+            origin: const LatLng(-25.0001, 28.0301),
+            destination: const DestinationSearchResult(
+              label: 'Route origin',
+              subtitle: 'Pretoria',
+              position: LatLng(-25.0001, 28.0001),
+            ),
+            route: selectedRoute,
+          );
+
+      expect(journey, isNull);
+    });
+
     test('builds a journey across two interlinking taxi routes', () {
       final firstRoute = _routeWithCoordinates(
         [

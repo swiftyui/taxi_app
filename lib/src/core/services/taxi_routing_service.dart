@@ -31,6 +31,26 @@ class TaxiRoutingService {
     ),
   );
 
+  Future<TaxiJourney?> findJourneyForRouteAsync({
+    required LatLng origin,
+    required DestinationSearchResult destination,
+    required TaxiRouteModel route,
+  }) => findBestJourneyAsync(
+    origin: origin,
+    destination: destination,
+    routes: [route],
+  );
+
+  TaxiJourney? findJourneyForRoute({
+    required LatLng origin,
+    required DestinationSearchResult destination,
+    required TaxiRouteModel route,
+  }) => findBestJourney(
+    origin: origin,
+    destination: destination,
+    routes: [route],
+  );
+
   TaxiJourney? findBestJourney({
     required LatLng origin,
     required DestinationSearchResult destination,
