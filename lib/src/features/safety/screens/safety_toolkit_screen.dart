@@ -290,69 +290,253 @@ class _SafetyHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(Dimensions.sixteen),
+    padding: const EdgeInsets.all(18),
     decoration: BoxDecoration(
       gradient: const LinearGradient(
         colors: [Colours.primaryOne, Colours.blueThree],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: Colours.blueThree.withValues(alpha: 0.2),
+          blurRadius: 18,
+          offset: const Offset(0, 7),
+        ),
+      ],
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.health_and_safety_rounded, color: Colors.white),
-        const SizedBox(height: 8),
+        Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(
+                Icons.health_and_safety_rounded,
+                color: Colors.white,
+                size: 23,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(
+                color: hasJourney
+                    ? Colours.green.withValues(alpha: 0.92)
+                    : Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(99),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    hasJourney
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.route_outlined,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    hasJourney ? 'Journey ready' : 'No active journey',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         const Text(
           'Travel with confidence',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
           ),
         ),
+        const SizedBox(height: 4),
         Text(
           hasJourney
-              ? 'Your current journey and location are ready to share.'
-              : 'Plan a journey to enable journey sharing and SOS location.',
+              ? 'Share your current progress or quickly reach someone you trust.'
+              : 'Plan a journey to share your route and current location.',
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.78),
             fontSize: 11,
+            height: 1.35,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
+        _SosAction(onTap: onSos),
+        const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
-              child: FilledButton.icon(
-                onPressed: hasJourney ? onShare : null,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colours.blueThree,
-                ),
-                icon: const Icon(Icons.ios_share_rounded),
-                label: const Text('Share journey'),
+              child: _SafetyQuickAction(
+                icon: Icons.ios_share_rounded,
+                title: 'Share journey',
+                subtitle: 'Send route & progress',
+                onTap: hasJourney ? onShare : null,
+                backgroundColor: Colors.white,
+                foregroundColor: Colours.blueThree,
               ),
             ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: onSos,
-              style: FilledButton.styleFrom(
-                backgroundColor: Colours.red,
+            const SizedBox(width: 10),
+            Expanded(
+              child: _SafetyQuickAction(
+                icon: Icons.call_rounded,
+                title: 'Call 112',
+                subtitle: 'Emergency services',
+                onTap: onCall,
+                backgroundColor: Colors.white.withValues(alpha: 0.1),
                 foregroundColor: Colors.white,
+                borderColor: Colors.white.withValues(alpha: 0.24),
               ),
-              child: const Text('SOS'),
             ),
           ],
         ),
-        TextButton.icon(
-          onPressed: onCall,
-          style: TextButton.styleFrom(foregroundColor: Colors.white),
-          icon: const Icon(Icons.call_outlined, size: 18),
-          label: const Text('Call emergency services (112)'),
-        ),
       ],
+    ),
+  );
+}
+
+class _SosAction extends StatelessWidget {
+  const _SosAction({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colours.red,
+    borderRadius: BorderRadius.circular(14),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: const SizedBox(
+        height: 58,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            children: [
+              Icon(Icons.sos_rounded, color: Colors.white, size: 26),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Send an SOS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Message your primary emergency contact',
+                      style: TextStyle(color: Colors.white70, fontSize: 9),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_rounded,
+                color: Colors.white70,
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _SafetyQuickAction extends StatelessWidget {
+  const _SafetyQuickAction({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    required this.backgroundColor,
+    required this.foregroundColor,
+    this.borderColor,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final Color? borderColor;
+
+  @override
+  Widget build(BuildContext context) => AnimatedOpacity(
+    opacity: onTap == null ? 0.48 : 1,
+    duration: const Duration(milliseconds: 180),
+    child: Material(
+      color: backgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: borderColor ?? Colors.transparent),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: 76,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Icon(icon, color: foregroundColor, size: 21),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: foregroundColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: foregroundColor.withValues(alpha: 0.66),
+                          fontSize: 8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     ),
   );
 }
@@ -378,38 +562,131 @@ class _ContactsCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFDCE7EA)),
+        boxShadow: [
+          BoxShadow(
+            color: Colours.primaryOne.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          ListTile(
-            leading: const Icon(
-              Icons.contact_emergency_outlined,
-              color: Colours.blueThree,
-            ),
-            title: const Text(
-              'Emergency contacts',
-              style: TextStyle(
-                color: Colours.primaryOne,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            subtitle: Text(
-              isSignedIn
-                  ? '${contacts.length} contact'
-                        '${contacts.length == 1 ? '' : 's'}'
-                  : 'Sign in to sync your trusted contacts',
-            ),
-            trailing: IconButton(
-              onPressed: onAdd,
-              tooltip: 'Add emergency contact',
-              icon: const Icon(Icons.add_circle_outline_rounded),
-              color: Colours.blueThree,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 13, 8, 11),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE6F1F5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.contact_emergency_outlined,
+                    color: Colours.blueThree,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Emergency contacts',
+                        style: TextStyle(
+                          color: Colours.primaryOne,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        isSignedIn
+                            ? '${contacts.length} trusted contact'
+                                  '${contacts.length == 1 ? '' : 's'}'
+                            : 'Sign in to sync trusted contacts',
+                        style: const TextStyle(
+                          color: Colours.charcoalLight,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: onAdd,
+                  tooltip: 'Add emergency contact',
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  color: Colours.blueThree,
+                  style: IconButton.styleFrom(
+                    backgroundColor: const Color(0xFFE6F1F5),
+                  ),
+                ),
+              ],
             ),
           ),
           if (isLoading)
-            const LinearProgressIndicator(color: Colours.blueThree)
+            const LinearProgressIndicator(
+              color: Colours.blueThree,
+              minHeight: 2,
+            )
+          else if (contacts.isEmpty)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colours.lightSurface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Add someone you trust',
+                    style: TextStyle(
+                      color: Colours.primaryOne,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  const Text(
+                    'Your primary contact can receive a prefilled SOS with your route and location.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colours.charcoalLight,
+                      fontSize: 10,
+                      height: 1.3,
+                    ),
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: onAdd,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colours.blueThree,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      icon: Icon(
+                        isSignedIn
+                            ? Icons.person_add_alt_rounded
+                            : Icons.login_rounded,
+                        size: 18,
+                      ),
+                      label: Text(
+                        isSignedIn ? 'Add trusted contact' : 'Sign in to add',
+                      ),
+                    ),
+                  ).paddingOnly(top: 10),
+                ],
+              ),
+            )
           else
             for (final contact in contacts) ...[
               const Divider(height: 1),
@@ -467,10 +744,29 @@ class _SafetyDisclaimer extends StatelessWidget {
   const _SafetyDisclaimer();
 
   @override
-  Widget build(BuildContext context) => const Text(
-    'HambaGo does not automatically contact emergency services or send messages. '
-    'Your phone will ask you to confirm calls and messages.',
-    textAlign: TextAlign.center,
-    style: TextStyle(color: Colours.charcoalLight, fontSize: 10, height: 1.35),
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(Dimensions.twelve),
+    decoration: BoxDecoration(
+      color: const Color(0xFFEAF2F5),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: const Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.info_outline_rounded, color: Colours.blueThree, size: 17),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            'HambaGo does not automatically contact emergency services or send '
+            'messages. Your phone will always ask you to confirm.',
+            style: TextStyle(
+              color: Colours.charcoalLight,
+              fontSize: 10,
+              height: 1.35,
+            ),
+          ),
+        ),
+      ],
+    ),
   );
 }

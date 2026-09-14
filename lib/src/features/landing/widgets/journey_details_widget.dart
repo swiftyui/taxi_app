@@ -156,18 +156,8 @@ class JourneyDetailsWidget extends StatelessWidget {
                       ActionType.journeyCompleted,
               onTap: _actionsProvider.startJourney,
             ),
-            OutlinedButton.icon(
-              onPressed: () => Get.toNamed<void>(AppRoutes.safetyToolkit.value),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(46),
-                foregroundColor: Colours.blueThree,
-                side: const BorderSide(color: Colours.blueThree),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(Dimensions.eight),
-                ),
-              ),
-              icon: const Icon(Icons.health_and_safety_outlined, size: 19),
-              label: const Text('Safety & share journey'),
+            _JourneySafetyAction(
+              onTap: () => Get.toNamed<void>(AppRoutes.safetyToolkit.value),
             ).paddingOnly(top: Dimensions.eight),
           ],
         ],
@@ -190,6 +180,70 @@ class JourneyDetailsWidget extends StatelessWidget {
     }
     return Get.appLocalizations.walkingEstimateNotice;
   }
+}
+
+class _JourneySafetyAction extends StatelessWidget {
+  const _JourneySafetyAction({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: const Color(0xFFEAF2F5),
+    borderRadius: BorderRadius.circular(12),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: const SizedBox(
+        height: 58,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Colours.blueThree,
+                child: Icon(
+                  Icons.health_and_safety_rounded,
+                  color: Colors.white,
+                  size: 19,
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Safety & journey sharing',
+                      style: TextStyle(
+                        color: Colours.primaryOne,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'Share progress, send SOS, or call 112',
+                      style: TextStyle(
+                        color: Colours.charcoalLight,
+                        fontSize: 9,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colours.blueThree,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _FareEstimateCard extends StatelessWidget {

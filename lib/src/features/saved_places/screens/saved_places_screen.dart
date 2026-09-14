@@ -170,36 +170,70 @@ class _SavedPlaceEditorScreenState extends State<SavedPlaceEditorScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          SegmentedButton<SavedPlaceType>(
-            segments: const [
-              ButtonSegment(
-                value: SavedPlaceType.home,
-                icon: Icon(Icons.home_outlined),
-                label: Text('Home'),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<SavedPlaceType>(
+              segments: const [
+                ButtonSegment(
+                  value: SavedPlaceType.home,
+                  icon: Icon(Icons.home_outlined),
+                  label: Text('Home'),
+                ),
+                ButtonSegment(
+                  value: SavedPlaceType.work,
+                  icon: Icon(Icons.work_outline_rounded),
+                  label: Text('Work'),
+                ),
+                ButtonSegment(
+                  value: SavedPlaceType.custom,
+                  icon: Icon(Icons.star_outline_rounded),
+                  label: Text('Frequent'),
+                ),
+              ],
+              selected: {_type},
+              showSelectedIcon: false,
+              style: ButtonStyle(
+                minimumSize: const WidgetStatePropertyAll(Size.fromHeight(54)),
+                tapTargetSize: MaterialTapTargetSize.padded,
+                visualDensity: VisualDensity.standard,
+                foregroundColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? Colors.white
+                      : Colours.primaryOne,
+                ),
+                iconColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? Colors.white
+                      : Colours.blueThree,
+                ),
+                backgroundColor: WidgetStateProperty.resolveWith(
+                  (states) => states.contains(WidgetState.selected)
+                      ? Colours.blueThree
+                      : Colors.white,
+                ),
+                side: WidgetStateProperty.resolveWith(
+                  (states) => BorderSide(
+                    color: states.contains(WidgetState.selected)
+                        ? Colours.blueThree
+                        : const Color(0xFFB8C8CD),
+                    width: states.contains(WidgetState.selected) ? 1.5 : 1,
+                  ),
+                ),
+                textStyle: const WidgetStatePropertyAll(
+                  TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                ),
               ),
-              ButtonSegment(
-                value: SavedPlaceType.work,
-                icon: Icon(Icons.work_outline_rounded),
-                label: Text('Work'),
-              ),
-              ButtonSegment(
-                value: SavedPlaceType.custom,
-                icon: Icon(Icons.star_outline_rounded),
-                label: Text('Frequent'),
-              ),
-            ],
-            selected: {_type},
-            showSelectedIcon: false,
-            onSelectionChanged: (selection) {
-              final previousDefault = _defaultLabel(_type);
-              setState(() {
-                _type = selection.single;
-                if (_labelController.text.trim().isEmpty ||
-                    _labelController.text == previousDefault) {
-                  _labelController.text = _defaultLabel(_type);
-                }
-              });
-            },
+              onSelectionChanged: (selection) {
+                final previousDefault = _defaultLabel(_type);
+                setState(() {
+                  _type = selection.single;
+                  if (_labelController.text.trim().isEmpty ||
+                      _labelController.text == previousDefault) {
+                    _labelController.text = _defaultLabel(_type);
+                  }
+                });
+              },
+            ),
           ),
           const SizedBox(height: Dimensions.sixteen),
           TextFormField(
@@ -376,21 +410,51 @@ class _LocationSelectionCard extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onSearch,
-                icon: const Icon(Icons.search_rounded),
-                label: const Text('Search'),
+              child: SizedBox(
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: onSearch,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colours.blueThree,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    side: const BorderSide(
+                      color: Colours.blueThree,
+                      width: 1.25,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  icon: const Icon(Icons.search_rounded, size: 20),
+                  label: const Text('Search'),
+                ),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: FilledButton.icon(
-                onPressed: onMap,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colours.blueThree,
+              child: SizedBox(
+                height: 52,
+                child: FilledButton.icon(
+                  onPressed: onMap,
+                  style: FilledButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colours.blueThree,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  icon: const Icon(Icons.map_outlined, size: 20),
+                  label: const Text('Use map'),
                 ),
-                icon: const Icon(Icons.map_outlined),
-                label: const Text('Use map'),
               ),
             ),
           ],
