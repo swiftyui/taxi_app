@@ -6,9 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class NearbyTaxiWeekPill extends StatelessWidget {
-  const NearbyTaxiWeekPill({required this.dayOfWeek, super.key});
+  const NearbyTaxiWeekPill({
+    required this.dayOfWeek,
+    this.serviceDays = const [],
+    this.departureTime,
+    super.key,
+  });
 
   final DayOfWeek dayOfWeek;
+  final List<String> serviceDays;
+  final String? departureTime;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -23,7 +30,9 @@ class NearbyTaxiWeekPill extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: DayOfWeek.values.map((day) {
-            final isSelected = day == dayOfWeek;
+            final isSelected = serviceDays.isEmpty
+                ? day == dayOfWeek
+                : serviceDays.contains(day.value);
             return Container(
               decoration: BoxDecoration(
                 color: isSelected ? Colours.blueThree : Colors.grey[300],
@@ -45,6 +54,13 @@ class NearbyTaxiWeekPill extends StatelessWidget {
           }).toList(),
         ),
       ),
+      if (departureTime != null && departureTime!.isNotEmpty)
+        Text(
+          'Departure: $departureTime',
+          style: Get.textTheme.labelMedium?.copyWith(
+            color: Colours.charcoalLight,
+          ),
+        ).paddingOnly(top: Dimensions.four),
     ],
   );
 }

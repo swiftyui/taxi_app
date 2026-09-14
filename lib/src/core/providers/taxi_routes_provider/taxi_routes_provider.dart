@@ -3,16 +3,23 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
+import 'package:TaxiApp/src/core/models/driver_profile.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/nearby_taxi_route_model.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/taxi_route_model.dart';
 import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class TaxiRoutesProvider extends GetxController {
-  TaxiRoutesProvider(this._mapsProvider, this._userLocationProvider);
+  TaxiRoutesProvider(
+    this._mapsProvider,
+    this._userLocationProvider, {
+    FirebaseFirestore? firestore,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance;
   static TaxiRoutesProvider create() => Get.isRegistered<TaxiRoutesProvider>()
       ? Get.find<TaxiRoutesProvider>()
       : Get.put<TaxiRoutesProvider>(
@@ -24,12 +31,17 @@ class TaxiRoutesProvider extends GetxController {
 
   final MapsProvider _mapsProvider;
   final UserLocationProvider _userLocationProvider;
+  final FirebaseFirestore _firestore;
+  final List<TaxiRouteModel> _datasetRoutes = [];
+  final List<TaxiRouteModel> _driverRoutes = [];
   final RxList<TaxiRouteModel> taxiRoutes = <TaxiRouteModel>[].obs;
   final RxList<NearbyTaxiRouteModel> nearbyRoutes =
       <NearbyTaxiRouteModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxnString errorMessage = RxnString();
   late final Worker _locationWorker;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _driverRoutesSubscription;
   Position? _lastNearbyLocation;
 
   @override
@@ -48,12 +60,24 @@ class TaxiRoutesProvider extends GetxController {
         }
       }
     });
+    _driverRoutesSubscription = _firestore
+        .collectionGroup('driverRoutes')
+        .snapshots()
+        .listen(
+          _handleDriverRoutes,
+          onError: (Object error, StackTrace stackTrace) {
+            debugPrint(
+              'Unable to load public driver routes: $error\n$stackTrace',
+            );
+          },
+        );
     unawaited(loadRoutes());
   }
 
   @override
   void onClose() {
     _locationWorker.dispose();
+    _driverRoutesSubscription?.cancel();
     super.onClose();
   }
 
@@ -87,7 +111,10 @@ class TaxiRoutesProvider extends GetxController {
       final taxiRoutesData = TaxiRouteParent.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-      taxiRoutes.value = taxiRoutesData.features;
+      _datasetRoutes
+        ..clear()
+        ..addAll(taxiRoutesData.features);
+      _publishRoutes();
 
       final userLocation = _userLocationProvider.userLocation.value;
       if (userLocation != null) {
@@ -98,6 +125,7 @@ class TaxiRoutesProvider extends GetxController {
         _lastNearbyLocation = userLocation;
         _findNearbyRoutes(userLocation);
       }
+
       await _mapsProvider.updateMarkers();
     } on TimeoutException {
       errorMessage.value = 'Taxi routes took too long to load. Please retry.';
@@ -111,6 +139,27 @@ class TaxiRoutesProvider extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void _handleDriverRoutes(QuerySnapshot<Map<String, dynamic>> snapshot) {
+    _driverRoutes
+      ..clear()
+      ..addAll(
+        snapshot.docs.map((document) {
+          final route = DriverRoute.fromJson(document.id, document.data());
+          return TaxiRouteModel.fromDriverRoute(route);
+        }),
+      );
+    _publishRoutes();
+    final userLocation = _userLocationProvider.userLocation.value;
+    if (userLocation != null) {
+      _findNearbyRoutes(userLocation);
+      unawaited(_mapsProvider.updateMarkers());
+    }
+  }
+
+  void _publishRoutes() {
+    taxiRoutes.assignAll([..._datasetRoutes, ..._driverRoutes]);
   }
 
   void _updateNearbyRoutes(Position position) {

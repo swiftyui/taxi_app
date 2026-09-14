@@ -6,6 +6,7 @@ import 'package:TaxiApp/src/core/widgets/ratings/taxi_ratings.dart';
 import 'package:TaxiApp/src/features/landing/enums/day_of_week.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_spots_available.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_week_pill.dart';
+import 'package:TaxiApp/src/features/landing/widgets/ride_request_action.dart';
 import 'package:TaxiApp/src/features/landing/widgets/taxi_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
@@ -110,6 +111,13 @@ class _SelectedRouteDetailsWidgetState
                           .properties
                           .dayofweek,
                     ),
+                    serviceDays:
+                        _actionsProvider.selectedRoute.value!.model.serviceDays,
+                    departureTime: _actionsProvider
+                        .selectedRoute
+                        .value!
+                        .model
+                        .departureTime,
                   ),
                   NearbyTaxiSpotsAvailable(
                     route: _actionsProvider.selectedRoute.value!,
@@ -143,6 +151,9 @@ class _SelectedRouteDetailsWidgetState
                     top: Dimensions.eight,
                     bottom: Dimensions.eight,
                   ),
+                  RideRequestAction(
+                    route: _actionsProvider.selectedRoute.value!,
+                  ).paddingOnly(bottom: Dimensions.eight),
                   _viewRouteButton.paddingOnly(top: Dimensions.eight),
                 ],
               ),

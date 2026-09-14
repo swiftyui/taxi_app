@@ -5,6 +5,7 @@ import 'package:TaxiApp/src/core/extensions/rx_worker.dart';
 import 'package:TaxiApp/src/core/models/destination_search_result.dart';
 import 'package:TaxiApp/src/core/models/taxi_journey.dart';
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
+import 'package:TaxiApp/src/core/providers/driver_reviews_provider/driver_reviews_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/nearby_taxi_route_model.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/providers/travel_log_provider/travel_log_provider.dart';
@@ -188,11 +189,16 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
 
   Future<void> _completeActiveTravelLog() async {
     final travelLog = _activeTravelLog;
-    if (travelLog == null) {
+    final completedJourney = journey.value;
+    if (travelLog == null || completedJourney == null) {
       return;
     }
     _activeTravelLog = null;
     final id = await travelLog;
     await TravelLogProvider.create().markJourneyCompleted(id);
+    await DriverReviewsProvider.create().queueJourneyReviews(
+      journey: completedJourney,
+      journeyId: id,
+    );
   }
 }

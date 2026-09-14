@@ -42,77 +42,84 @@ class TaxiAction extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Stack(
-    alignment: Alignment.center,
-    children: [
-      Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(99),
-          boxShadow: [
-            BoxShadow(
-              color: Colours.primaryOne.withValues(alpha: .2),
-              blurRadius: Dimensions.four,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          height: _actionHeight,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                width: 3,
-                height: _actionHeight,
-                decoration: const BoxDecoration(color: Colours.red),
-              ),
-              Container(
-                width: 3,
-                height: _actionHeight,
-                decoration: const BoxDecoration(color: Colours.green),
-              ),
-              Container(
-                width: 3,
-                height: _actionHeight,
-                decoration: const BoxDecoration(color: Colours.yellow),
-              ),
-              Container(
-                width: 3,
-                height: _actionHeight,
-                decoration: const BoxDecoration(color: Colours.blue),
-              ),
-            ],
-          ).paddingOnly(right: Dimensions.sixteen),
-        ),
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(99),
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Icon(
-            icon,
-            color: Colours.primaryOne,
-            size: Dimensions.sixteen,
-          ).paddingOnly(right: Dimensions.eight),
-          Expanded(
-            child: Text(
-              label,
-              style: Get.textTheme.labelLarge?.copyWith(
-                color: Colours.primaryOne,
-              ),
-              textAlign: TextAlign.start,
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(99),
+              boxShadow: [
+                BoxShadow(
+                  color: Colours.primaryOne.withValues(alpha: .2),
+                  blurRadius: Dimensions.four,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: _actionHeight,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    width: 3,
+                    height: _actionHeight,
+                    decoration: const BoxDecoration(color: Colours.red),
+                  ),
+                  Container(
+                    width: 3,
+                    height: _actionHeight,
+                    decoration: const BoxDecoration(color: Colours.green),
+                  ),
+                  Container(
+                    width: 3,
+                    height: _actionHeight,
+                    decoration: const BoxDecoration(color: Colours.yellow),
+                  ),
+                  Container(
+                    width: 3,
+                    height: _actionHeight,
+                    decoration: const BoxDecoration(color: Colours.blue),
+                  ),
+                ],
+              ).paddingOnly(right: Dimensions.sixteen),
             ),
           ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: Colours.primaryOne,
+                size: Dimensions.sixteen,
+              ).paddingOnly(right: Dimensions.eight),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Get.textTheme.labelLarge?.copyWith(
+                    color: Colours.primaryOne,
+                  ),
+                  textAlign: TextAlign.start,
+                ),
+              ),
+            ],
+          ).paddingOnly(
+            top: Dimensions.eight,
+            bottom: Dimensions.eight,
+            left: Dimensions.sixteen,
+            right: Dimensions.sixteen,
+          ),
         ],
-      ).paddingOnly(
-        top: Dimensions.eight,
-        bottom: Dimensions.eight,
-        left: Dimensions.sixteen,
-        right: Dimensions.sixteen,
       ),
-    ],
+    ),
   );
 }

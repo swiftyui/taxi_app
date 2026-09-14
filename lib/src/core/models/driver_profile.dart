@@ -55,33 +55,49 @@ class DriverProfile {
 class DriverRoute {
   const DriverRoute({
     required this.id,
+    required this.driverId,
     required this.originName,
     required this.destinationName,
+    required this.origin,
+    required this.destination,
     required this.fare,
     required this.serviceDays,
+    required this.departureTime,
     required this.notes,
-    required this.status,
+    required this.associationName,
+    required this.seatCapacity,
     required this.createdAt,
   });
 
   factory DriverRoute.fromJson(String id, Map<String, dynamic> json) =>
       DriverRoute(
         id: id,
+        driverId: json['driverId'] as String,
         originName: json['originName'] as String,
         destinationName: json['destinationName'] as String,
+        origin: json['origin'] as GeoPoint,
+        destination: json['destination'] as GeoPoint,
         fare: (json['fare'] as num).toDouble(),
         serviceDays: List<String>.from(json['serviceDays'] as List),
+        departureTime: json['departureTime'] as String? ?? '',
         notes: json['notes'] as String? ?? '',
-        status: json['status'] as String,
+        associationName:
+            json['associationName'] as String? ?? 'Independent HambaGo driver',
+        seatCapacity: (json['seatCapacity'] as num?)?.toInt() ?? 1,
         createdAt: (json['createdAt'] as Timestamp?)?.toDate(),
       );
 
   final String id;
+  final String driverId;
   final String originName;
   final String destinationName;
+  final GeoPoint origin;
+  final GeoPoint destination;
   final double fare;
   final List<String> serviceDays;
+  final String departureTime;
   final String notes;
-  final String status;
+  final String associationName;
+  final int seatCapacity;
   final DateTime? createdAt;
 }

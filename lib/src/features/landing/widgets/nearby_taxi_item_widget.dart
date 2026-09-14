@@ -8,7 +8,7 @@ import 'package:TaxiApp/src/core/widgets/ratings/taxi_ratings.dart';
 import 'package:TaxiApp/src/features/landing/enums/day_of_week.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_spots_available.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_week_pill.dart';
-import 'package:TaxiApp/src/features/landing/widgets/taxi_actions.dart';
+import 'package:TaxiApp/src/features/landing/widgets/ride_request_action.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -65,6 +65,8 @@ class NearbyTaxiItemWidget extends StatelessWidget {
                       dayOfWeek: DayOfWeek.fromValue(
                         route.model.properties.dayofweek,
                       ),
+                      serviceDays: route.model.serviceDays,
+                      departureTime: route.model.departureTime,
                     ),
                     NearbyTaxiSpotsAvailable(
                       route: route,
@@ -92,9 +94,8 @@ class NearbyTaxiItemWidget extends StatelessWidget {
                       top: Dimensions.eight,
                       bottom: Dimensions.eight,
                     ),
-                    TaxiAction(
-                      label: Get.appLocalizations.requestARide,
-                      icon: Icons.local_taxi_rounded,
+                    RideRequestAction(
+                      route: route,
                     ).paddingOnly(bottom: Dimensions.eight),
                   ],
                 ),

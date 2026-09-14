@@ -93,7 +93,8 @@ class LandingBottomSheet extends StatelessWidget {
 
             _taxiRoutesProvider.isLoading.value
                 ? const TaxiRoutesShimmer()
-                : _taxiRoutesProvider.errorMessage.value != null
+                : _taxiRoutesProvider.errorMessage.value != null &&
+                      _taxiRoutesProvider.nearbyRoutes.isEmpty
                 ? _RouteStatus(
                     message: _taxiRoutesProvider.errorMessage.value!,
                     actionLabel: Get.appLocalizations.tryAgain,

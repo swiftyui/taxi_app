@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class DriverAccountProvider extends GetxController {
   DriverAccountProvider({
@@ -120,7 +121,10 @@ class DriverAccountProvider extends GetxController {
     required String destinationName,
     required double fare,
     required List<String> serviceDays,
+    required String departureTime,
     required String notes,
+    LatLng? originPosition,
+    LatLng? destinationPosition,
   }) async {
     final user = _auth.currentUser;
     if (user == null || profile.value == null) {
@@ -133,33 +137,35 @@ class DriverAccountProvider extends GetxController {
       isSaving.value = true;
       errorMessage.value = null;
       successMessage.value = null;
-      final locations = await Future.wait([
-        _geocoding.locationFromAddress('$originName, South Africa'),
-        _geocoding.locationFromAddress('$destinationName, South Africa'),
-      ]);
-      if (locations.any((result) => result.isEmpty)) {
+      final resolvedOrigin =
+          originPosition ?? await _geocodeAddress(originName);
+      final resolvedDestination =
+          destinationPosition ?? await _geocodeAddress(destinationName);
+      if (resolvedOrigin == null || resolvedDestination == null) {
         errorMessage.value =
             'We could not locate the route origin or destination.';
         return false;
       }
-      final origin = locations[0].first;
-      final destination = locations[1].first;
       await _routesCollection(user.uid).add({
         'driverId': user.uid,
         'originName': originName.trim(),
         'destinationName': destinationName.trim(),
-        'origin': GeoPoint(origin.latitude, origin.longitude),
-        'destination': GeoPoint(destination.latitude, destination.longitude),
+        'origin': GeoPoint(resolvedOrigin.latitude, resolvedOrigin.longitude),
+        'destination': GeoPoint(
+          resolvedDestination.latitude,
+          resolvedDestination.longitude,
+        ),
         'fare': fare,
         'serviceDays': serviceDays,
+        'departureTime': departureTime,
         'notes': notes.trim(),
-        'status': 'pendingReview',
+        'associationName': profile.value!.associationName,
+        'seatCapacity': profile.value!.seatCapacity,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
       await loadDriverAccount();
-      successMessage.value =
-          'Route submitted. It will appear publicly after review.';
+      successMessage.value = 'Route added to your active routes.';
       return true;
     } on FirebaseException catch (error, stackTrace) {
       debugPrint('Unable to create driver route: $error\n$stackTrace');
@@ -173,6 +179,99 @@ class DriverAccountProvider extends GetxController {
     } finally {
       isSaving.value = false;
     }
+  }
+
+  Future<bool> updateRoute({
+    required String routeId,
+    required String originName,
+    required String destinationName,
+    required double fare,
+    required List<String> serviceDays,
+    required String departureTime,
+    required String notes,
+    LatLng? originPosition,
+    LatLng? destinationPosition,
+  }) async {
+    final user = _auth.currentUser;
+    final driverProfile = profile.value;
+    if (user == null || driverProfile == null) {
+      errorMessage.value = 'Your driver account is not available.';
+      return false;
+    }
+
+    try {
+      isSaving.value = true;
+      errorMessage.value = null;
+      successMessage.value = null;
+      final resolvedOrigin =
+          originPosition ?? await _geocodeAddress(originName);
+      final resolvedDestination =
+          destinationPosition ?? await _geocodeAddress(destinationName);
+      if (resolvedOrigin == null || resolvedDestination == null) {
+        errorMessage.value =
+            'We could not locate the route origin or destination.';
+        return false;
+      }
+      await _routesCollection(user.uid).doc(routeId).update({
+        'originName': originName.trim(),
+        'destinationName': destinationName.trim(),
+        'origin': GeoPoint(resolvedOrigin.latitude, resolvedOrigin.longitude),
+        'destination': GeoPoint(
+          resolvedDestination.latitude,
+          resolvedDestination.longitude,
+        ),
+        'fare': fare,
+        'serviceDays': serviceDays,
+        'departureTime': departureTime,
+        'notes': notes.trim(),
+        'associationName': driverProfile.associationName,
+        'seatCapacity': driverProfile.seatCapacity,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      await loadDriverAccount();
+      successMessage.value = 'Route updated.';
+      return true;
+    } on FirebaseException catch (error, stackTrace) {
+      debugPrint('Unable to update driver route: $error\n$stackTrace');
+      errorMessage.value = error.message ?? 'Unable to update this route.';
+      return false;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  Future<bool> deleteRoute(String routeId) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      errorMessage.value = 'Your driver account is not available.';
+      return false;
+    }
+
+    try {
+      isSaving.value = true;
+      errorMessage.value = null;
+      successMessage.value = null;
+      await _routesCollection(user.uid).doc(routeId).delete();
+      routes.removeWhere((route) => route.id == routeId);
+      successMessage.value = 'Route deleted.';
+      return true;
+    } on FirebaseException catch (error, stackTrace) {
+      debugPrint('Unable to delete driver route: $error\n$stackTrace');
+      errorMessage.value = error.message ?? 'Unable to delete this route.';
+      return false;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  Future<LatLng?> _geocodeAddress(String address) async {
+    final locations = await _geocoding.locationFromAddress(
+      '${address.trim()}, South Africa',
+    );
+    if (locations.isEmpty) {
+      return null;
+    }
+    return LatLng(locations.first.latitude, locations.first.longitude);
   }
 
   DocumentReference<Map<String, dynamic>> _profileDocument(String userId) =>

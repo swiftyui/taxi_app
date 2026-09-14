@@ -2,6 +2,7 @@ import 'package:TaxiApp/src/core/models/travel_log_entry.dart';
 import 'package:TaxiApp/src/core/providers/hamba_points_provider/hamba_points_provider.dart';
 import 'package:TaxiApp/src/core/providers/driver_account_provider/driver_account_provider.dart';
 import 'package:TaxiApp/src/core/providers/my_profile_provider/my_profile_provider.dart';
+import 'package:TaxiApp/src/core/providers/ride_requests_provider/ride_requests_provider.dart';
 import 'package:TaxiApp/src/core/providers/travel_log_provider/travel_log_provider.dart';
 import 'package:TaxiApp/src/core/routes/routes.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
@@ -366,6 +367,9 @@ class _SignedInProfileState extends State<_SignedInProfile> {
               ).paddingOnly(top: Dimensions.sixteen),
             _TravelLogCard(
               provider: TravelLogProvider.create(),
+            ).paddingOnly(top: Dimensions.sixteen),
+            _RideRequestsProfileCard(
+              provider: RideRequestsProvider.create(),
             ).paddingOnly(top: Dimensions.sixteen),
             _DriverAccountCard(
               provider: DriverAccountProvider.create(),
@@ -1012,6 +1016,73 @@ class _HambaPointsCard extends StatelessWidget {
                     ),
             ),
           ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _RideRequestsProfileCard extends StatelessWidget {
+  const _RideRequestsProfileCard({required this.provider});
+
+  final RideRequestsProvider provider;
+
+  @override
+  Widget build(BuildContext context) => Obx(
+    () => _ProfileCard(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        onTap: () => Get.toNamed<void>(AppRoutes.rideRequests.value),
+        child: Padding(
+          padding: const EdgeInsets.all(Dimensions.twelve),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE6F1F5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.hail_rounded,
+                  color: Colours.blueThree,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: Dimensions.twelve),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'My ride requests',
+                      style: TextStyle(
+                        color: Colours.primaryOne,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      provider.myRequests.isEmpty
+                          ? 'View and manage rides you request.'
+                          : '${provider.myRequests.length} request'
+                                '${provider.myRequests.length == 1 ? '' : 's'}',
+                      style: const TextStyle(
+                        color: Colours.charcoalLight,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Colours.charcoalLight,
+              ),
+            ],
+          ),
         ),
       ),
     ),

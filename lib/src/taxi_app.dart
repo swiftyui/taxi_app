@@ -3,6 +3,8 @@ import 'package:TaxiApp/src/core/providers/language_provider/language_provider.d
 import 'package:TaxiApp/src/core/routes/routes.dart';
 import 'package:TaxiApp/src/core/theme/theme.dart';
 import 'package:TaxiApp/src/l10n/app_localizations.dart';
+import 'package:TaxiApp/src/features/ride_requests/widgets/ride_request_banner.dart';
+import 'package:TaxiApp/src/features/driver_reviews/widgets/driver_review_prompt.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -38,11 +40,14 @@ class TaxiApp extends StatelessWidget {
         data: MediaQuery.of(
           context,
         ).copyWith(textScaler: TextScaler.noScaling, boldText: false),
-        // The Stack lets the [SendingCampaignOverlay] paint on top of
-        // every route, drawer, dialog and snackbar while a campaign
-        // is sending. The overlay collapses to a zero-size widget
-        // when no send is in flight, so it has no cost otherwise.
-        child: child!,
+        // Ride requests must remain visible above every app route.
+        child: Stack(
+          children: [
+            child!,
+            const DriverReviewPromptHost(),
+            Positioned(top: 0, left: 0, right: 0, child: RideRequestBanner()),
+          ],
+        ),
       ),
     ),
   );

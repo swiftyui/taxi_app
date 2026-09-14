@@ -1,6 +1,21 @@
-# taxi_app
+# HambaGo
 
 A new Flutter project.
+
+## Firebase email templates
+
+Branded Firebase Authentication templates and installation instructions are
+kept in [`firebase/email-templates`](firebase/email-templates).
+
+## Firestore features
+
+Ride requests, driver accounts, and driver-created public routes use the
+security rules in [`firestore.rules`](firestore.rules). Deploy these rules
+before testing the features against the production Firebase project:
+
+```sh
+firebase deploy --only firestore:rules
+```
 
 ## Getting Started
 

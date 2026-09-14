@@ -2,6 +2,66 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function validDriverRoute(userId) {
+      return request.resource.data.keys().hasOnly([
+          'driverId',
+          'originName',
+          'destinationName',
+          'origin',
+          'destination',
+          'fare',
+          'serviceDays',
+          'departureTime',
+          'notes',
+          'associationName',
+          'seatCapacity',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.driverId == userId
+        && request.resource.data.originName is string
+        && request.resource.data.originName.size() >= 3
+        && request.resource.data.originName.size() <= 160
+        && request.resource.data.destinationName is string
+        && request.resource.data.destinationName.size() >= 3
+        && request.resource.data.destinationName.size() <= 160
+        && request.resource.data.origin is latlng
+        && request.resource.data.destination is latlng
+        && request.resource.data.fare is number
+        && request.resource.data.fare > 0
+        && request.resource.data.fare <= 10000
+        && request.resource.data.serviceDays is list
+        && request.resource.data.serviceDays.size() >= 1
+        && request.resource.data.serviceDays.size() <= 7
+        && request.resource.data.serviceDays.hasOnly([
+          'Mon',
+          'Tue',
+          'Wed',
+          'Thu',
+          'Fri',
+          'Sat',
+          'Sun'
+        ])
+        && request.resource.data.departureTime is string
+        && request.resource.data.departureTime.matches(
+          '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+        )
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 300
+        && request.resource.data.associationName is string
+        && request.resource.data.associationName.size() >= 2
+        && request.resource.data.associationName.size() <= 120
+        && request.resource.data.associationName == get(
+          /databases/$(database)/documents/users/$(userId)/driverAccount/profile
+        ).data.associationName
+        && request.resource.data.seatCapacity is int
+        && request.resource.data.seatCapacity >= 1
+        && request.resource.data.seatCapacity <= 40
+        && request.resource.data.seatCapacity == get(
+          /databases/$(database)/documents/users/$(userId)/driverAccount/profile
+        ).data.seatCapacity;
+    }
+
     match /routeReviews/{routeId}/reviews/{userId} {
       allow read: if true;
       allow create, update: if request.auth != null
@@ -34,6 +94,58 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
+    match /driverReviews/{driverId}/reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.auth.uid != driverId
+        && request.resource.data.keys().hasOnly([
+          'reviewerId',
+          'reviewerName',
+          'driverId',
+          'routeDocumentId',
+          'journeyId',
+          'rating',
+          'comment',
+          'originName',
+          'destinationName',
+          'driverLabel',
+          'updatedAt'
+        ])
+        && request.resource.data.reviewerId == request.auth.uid
+        && request.resource.data.driverId == driverId
+        && request.resource.data.routeDocumentId is string
+        && request.resource.data.routeDocumentId.size() >= 1
+        && request.resource.data.routeDocumentId.size() <= 100
+        && request.resource.data.journeyId is string
+        && request.resource.data.journeyId.size() >= 1
+        && request.resource.data.journeyId.size() <= 100
+        && reviewId == request.auth.uid + '_'
+          + request.resource.data.journeyId + '_'
+          + request.resource.data.routeDocumentId
+        && request.resource.data.reviewerName is string
+        && request.resource.data.reviewerName.size() >= 1
+        && request.resource.data.reviewerName.size() <= 100
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() <= 500
+        && request.resource.data.originName is string
+        && request.resource.data.originName.size() <= 160
+        && request.resource.data.destinationName is string
+        && request.resource.data.destinationName.size() <= 160
+        && request.resource.data.driverLabel is string
+        && request.resource.data.driverLabel.size() <= 160
+        && request.resource.data.updatedAt == request.time
+        && exists(
+          /databases/$(database)/documents/users/$(driverId)/driverRoutes/$(request.resource.data.routeDocumentId)
+        )
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)/travelLogs/$(request.resource.data.journeyId)
+        ).data.status == 'completed';
+      allow update, delete: if false;
+    }
+
     match /users/{userId}/travelLogs/{logId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow create, update: if request.auth != null
@@ -50,21 +162,45 @@ service cloud.firestore {
 
     match /users/{userId}/hambaPointAwards/{awardId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null
-        && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly([
-          'type',
-          'featureId',
-          'points',
-          'awardedAt'
-        ])
-        && request.resource.data.type == 'routeReview'
-        && request.resource.data.featureId is int
-        && awardId == 'review_' + string(request.resource.data.featureId)
-        && request.resource.data.points == 1
-        && existsAfter(
-          /databases/$(database)/documents/routeReviews/$(request.resource.data.featureId)/reviews/$(userId)
-        );
+      allow create: if request.auth != null && (
+        (
+          request.auth.uid == userId
+          && request.resource.data.keys().hasOnly([
+            'type',
+            'featureId',
+            'points',
+            'awardedAt'
+          ])
+          && request.resource.data.type == 'routeReview'
+          && request.resource.data.featureId is int
+          && awardId == 'review_' + string(request.resource.data.featureId)
+          && request.resource.data.points == 1
+          && existsAfter(
+            /databases/$(database)/documents/routeReviews/$(request.resource.data.featureId)/reviews/$(userId)
+          )
+        )
+        || (
+          request.auth.uid != userId
+          && request.resource.data.keys().hasOnly([
+            'type',
+            'driverId',
+            'reviewerId',
+            'reviewId',
+            'points',
+            'awardedAt'
+          ])
+          && request.resource.data.type == 'driverReview'
+          && request.resource.data.driverId == userId
+          && request.resource.data.reviewerId == request.auth.uid
+          && request.resource.data.reviewId is string
+          && awardId == 'driver_review_' + request.resource.data.reviewId
+          && request.resource.data.points == 1
+          && getAfter(
+            /databases/$(database)/documents/driverReviews/$(userId)/reviews/$(request.resource.data.reviewId)
+          ).data.rating >= 3
+        )
+      )
+        && request.resource.data.awardedAt == request.time;
       allow update, delete: if false;
     }
 
@@ -112,53 +248,86 @@ service cloud.firestore {
     }
 
     match /users/{userId}/driverRoutes/{routeId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if true;
       allow create: if request.auth != null
         && request.auth.uid == userId
         && exists(
           /databases/$(database)/documents/users/$(userId)/driverAccount/profile
         )
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && validDriverRoute(userId);
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && resource.data.driverId == userId
+        && request.resource.data.driverId == userId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && validDriverRoute(userId);
+      allow delete: if request.auth != null
+        && request.auth.uid == userId
+        && resource.data.driverId == userId;
+    }
+
+    match /{path=**}/driverRoutes/{routeId} {
+      allow read: if true;
+    }
+
+    match /rideRequests/{requestId} {
+      allow read: if request.auth != null
+        && (
+          resource.data.riderId == request.auth.uid
+          || exists(
+            /databases/$(database)/documents/users/$(request.auth.uid)/driverAccount/profile
+          )
+        );
+      allow create: if request.auth != null
         && request.resource.data.keys().hasOnly([
-          'driverId',
+          'riderId',
+          'riderName',
+          'routeFeatureId',
+          'routeId',
           'originName',
           'destinationName',
-          'origin',
-          'destination',
+          'associationName',
           'fare',
-          'serviceDays',
-          'notes',
+          'pickupLocation',
           'status',
-          'createdAt',
-          'updatedAt'
+          'requestedAt'
         ])
-        && request.resource.data.driverId == userId
+        && request.resource.data.riderId == request.auth.uid
+        && request.resource.data.riderName is string
+        && request.resource.data.riderName.size() >= 1
+        && request.resource.data.riderName.size() <= 100
+        && request.resource.data.routeFeatureId is int
+        && request.resource.data.routeId is string
+        && request.resource.data.routeId.size() >= 1
+        && request.resource.data.routeId.size() <= 100
         && request.resource.data.originName is string
-        && request.resource.data.originName.size() >= 3
+        && request.resource.data.originName.size() >= 1
         && request.resource.data.originName.size() <= 160
         && request.resource.data.destinationName is string
-        && request.resource.data.destinationName.size() >= 3
+        && request.resource.data.destinationName.size() >= 1
         && request.resource.data.destinationName.size() <= 160
-        && request.resource.data.origin is latlng
-        && request.resource.data.destination is latlng
+        && request.resource.data.associationName is string
+        && request.resource.data.associationName.size() <= 160
         && request.resource.data.fare is number
-        && request.resource.data.fare > 0
+        && request.resource.data.fare >= 0
         && request.resource.data.fare <= 10000
-        && request.resource.data.serviceDays is list
-        && request.resource.data.serviceDays.size() >= 1
-        && request.resource.data.serviceDays.size() <= 7
-        && request.resource.data.serviceDays.hasOnly([
-          'Mon',
-          'Tue',
-          'Wed',
-          'Thu',
-          'Fri',
-          'Sat',
-          'Sun'
+        && request.resource.data.pickupLocation is latlng
+        && request.resource.data.status == 'requested'
+        && request.resource.data.requestedAt == request.time;
+      allow update: if request.auth != null
+        && resource.data.riderId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'expiredAt'
         ])
-        && request.resource.data.notes is string
-        && request.resource.data.notes.size() <= 300
-        && request.resource.data.status == 'pendingReview';
-      allow update, delete: if false;
+        && resource.data.status == 'requested'
+        && request.resource.data.status == 'expired'
+        && request.resource.data.expiredAt == request.time;
+      allow delete: if request.auth != null
+        && resource.data.riderId == request.auth.uid;
     }
   }
 }

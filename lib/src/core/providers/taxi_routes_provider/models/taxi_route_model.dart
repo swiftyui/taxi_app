@@ -1,4 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'dart:math' as math;
+
+import 'package:TaxiApp/src/core/models/driver_profile.dart';
 part 'taxi_route_model.g.dart';
 
 @JsonSerializable()
@@ -18,9 +21,84 @@ class TaxiRouteModel {
     required this.id,
     required this.type,
     required this.properties,
+    this.serviceDays = const [],
+    this.departureTime,
   });
   factory TaxiRouteModel.fromJson(Map<String, dynamic> json) =>
       _$TaxiRouteModelFromJson(json);
+
+  factory TaxiRouteModel.fromDriverRoute(DriverRoute route) {
+    final featureId = _stableDriverFeatureId(route.driverId, route.id);
+    final coordinates = [
+      [route.origin.longitude, route.origin.latitude],
+      [route.destination.longitude, route.destination.latitude],
+    ];
+    final routeLength = _distanceInKilometres(
+      route.origin.latitude,
+      route.origin.longitude,
+      route.destination.latitude,
+      route.destination.longitude,
+    );
+    return TaxiRouteModel(
+      geometry: TaxiRouteGeometry(type: 'LineString', parts: [coordinates]),
+      id: featureId,
+      type: 'Feature',
+      serviceDays: route.serviceDays,
+      departureTime: route.departureTime,
+      properties: TaxiRouteProperties(
+        fid: featureId,
+        noofvehs: 1,
+        fare: route.fare,
+        route_id: 'driver:${route.driverId}:${route.id}',
+        shpname: '',
+        spd_mn_nm: '',
+        destpnt: route.destinationName,
+        trnsferpnt: '',
+        alt_fare3: 0,
+        alt_fare2: 0,
+        alt_fare1: 0,
+        originname: route.originName,
+        routelengt: routeLength,
+        noassoc: 1,
+        alt_fare4: 0,
+        regionname: '',
+        destmuni: '',
+        spd_dc_nm: '',
+        spd_sp_nm: '',
+        origintype: 'Driver route',
+        period: 0,
+        assocroute: '',
+        region_id: 0,
+        spo_sp_nm: '',
+        spo_featur: 0,
+        spd_label: route.destinationName,
+        assocname: route.associationName,
+        destname: route.destinationName,
+        originmuni: '',
+        spo_mn_nm: '',
+        SHAPE__Length: routeLength * 1000,
+        matchid: featureId,
+        spd_mp_nm: '',
+        assoc_id: 0,
+        noofseats: route.seatCapacity,
+        trackid: featureId,
+        shapeno: '',
+        shape_leng: routeLength * 1000,
+        originpnt: '${route.originName} · ${route.departureTime}',
+        vianame: route.notes,
+        shapefile: 'HambaGo driver route',
+        surveydate: route.createdAt?.year ?? DateTime.now().year,
+        spo_dc_nm: '',
+        spo_mp_nm: '',
+        spo_label: route.originName,
+        routeleg: 1,
+        spd_featur: 0,
+        dayofweek: route.serviceDays.first,
+        category: 'Driver route',
+        desttype: 'Driver route',
+      ),
+    );
+  }
 
   Map<String, dynamic> toJson() => _$TaxiRouteModelToJson(this);
 
@@ -28,6 +106,41 @@ class TaxiRouteModel {
   final int id;
   final String type;
   final TaxiRouteProperties properties;
+  final List<String> serviceDays;
+  final String? departureTime;
+
+  static int _stableDriverFeatureId(String driverId, String routeId) {
+    var hash = 0x811c9dc5;
+    for (final codeUnit in '$driverId/$routeId'.codeUnits) {
+      hash ^= codeUnit;
+      hash = (hash * 0x01000193) & 0x7fffffff;
+    }
+    return -(hash == 0 ? 1 : hash);
+  }
+
+  static double _distanceInKilometres(
+    double startLatitude,
+    double startLongitude,
+    double endLatitude,
+    double endLongitude,
+  ) {
+    const earthRadiusKilometres = 6371.0;
+    final latitudeDelta = _toRadians(endLatitude - startLatitude);
+    final longitudeDelta = _toRadians(endLongitude - startLongitude);
+    final startLatitudeRadians = _toRadians(startLatitude);
+    final endLatitudeRadians = _toRadians(endLatitude);
+    final haversine =
+        math.sin(latitudeDelta / 2) * math.sin(latitudeDelta / 2) +
+        math.cos(startLatitudeRadians) *
+            math.cos(endLatitudeRadians) *
+            math.sin(longitudeDelta / 2) *
+            math.sin(longitudeDelta / 2);
+    return earthRadiusKilometres *
+        2 *
+        math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine));
+  }
+
+  static double _toRadians(double degrees) => degrees * math.pi / 180;
 }
 
 class TaxiRouteGeometry {
