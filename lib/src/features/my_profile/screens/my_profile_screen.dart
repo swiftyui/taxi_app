@@ -1,8 +1,11 @@
 import 'package:TaxiApp/src/core/models/travel_log_entry.dart';
 import 'package:TaxiApp/src/core/providers/hamba_points_provider/hamba_points_provider.dart';
 import 'package:TaxiApp/src/core/providers/driver_account_provider/driver_account_provider.dart';
+import 'package:TaxiApp/src/core/providers/favorite_routes_provider/favorite_routes_provider.dart';
 import 'package:TaxiApp/src/core/providers/my_profile_provider/my_profile_provider.dart';
 import 'package:TaxiApp/src/core/providers/ride_requests_provider/ride_requests_provider.dart';
+import 'package:TaxiApp/src/core/providers/safety_provider/safety_provider.dart';
+import 'package:TaxiApp/src/core/providers/saved_places_provider/saved_places_provider.dart';
 import 'package:TaxiApp/src/core/providers/travel_log_provider/travel_log_provider.dart';
 import 'package:TaxiApp/src/core/routes/routes.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
@@ -191,30 +194,45 @@ class _SignedOutProfileState extends State<_SignedOutProfile> {
                       ),
                     ).paddingOnly(top: _createAccount ? 16 : 4),
                     const _OrDivider(),
-                    _SocialSignInButton(
-                      label: 'Continue with Google',
-                      brand: 'G',
-                      brandColor: const Color(0xFF4285F4),
-                      onPressed: () => widget.provider.signInWithSocialProvider(
-                        SocialSignInProvider.google,
+                    Obx(
+                      () => _ProviderSignInButton(
+                        provider: SocialSignInProvider.google,
+                        isLoading:
+                            widget.provider.activeSocialProvider.value ==
+                            SocialSignInProvider.google,
+                        isDisabled: widget.provider.isBusy.value,
+                        onPressed: widget.provider.signInWithGoogle,
                       ),
                     ),
-                    _SocialSignInButton(
-                      label: 'Continue with Facebook',
-                      icon: Icons.facebook,
-                      brandColor: _ProfileStyles.blue,
-                      onPressed: () => widget.provider.signInWithSocialProvider(
-                        SocialSignInProvider.facebook,
+                    Obx(
+                      () => _ProviderSignInButton(
+                        provider: SocialSignInProvider.apple,
+                        isLoading:
+                            widget.provider.activeSocialProvider.value ==
+                            SocialSignInProvider.apple,
+                        isDisabled: widget.provider.isBusy.value,
+                        onPressed: widget.provider.signInWithApple,
                       ),
                     ).paddingOnly(top: Dimensions.eight),
-                    _SocialSignInButton(
-                      label: 'Continue with Apple',
-                      icon: Icons.apple,
-                      brandColor: Colors.black,
-                      onPressed: () => widget.provider.signInWithSocialProvider(
-                        SocialSignInProvider.apple,
-                      ),
-                    ).paddingOnly(top: Dimensions.eight),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          color: _ProfileStyles.textSecondary,
+                          size: 12,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Secure sign-in powered by Firebase',
+                          style: TextStyle(
+                            color: _ProfileStyles.textSecondary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ).paddingOnly(top: Dimensions.twelve),
                   ],
                 ),
               ),
@@ -353,6 +371,15 @@ class _SignedInProfileState extends State<_SignedInProfile> {
             _TravelLogCard(
               provider: TravelLogProvider.create(),
             ).paddingOnly(top: Dimensions.sixteen),
+            _FavoriteRoutesProfileCard(
+              provider: FavoriteRoutesProvider.create(),
+            ).paddingOnly(top: Dimensions.sixteen),
+            _SavedPlacesProfileCard(
+              provider: SavedPlacesProvider.create(),
+            ).paddingOnly(top: Dimensions.sixteen),
+            _SafetyProfileCard(
+              provider: SafetyProvider.create(),
+            ).paddingOnly(top: Dimensions.sixteen),
             _RideRequestsProfileCard(
               provider: RideRequestsProvider.create(),
             ).paddingOnly(top: Dimensions.sixteen),
@@ -468,7 +495,6 @@ class _SignedInProfileState extends State<_SignedInProfile> {
           (provider) => switch (provider.providerId) {
             'password' => 'Email and password',
             'google.com' => 'Google',
-            'facebook.com' => 'Facebook',
             'apple.com' => 'Apple',
             _ => provider.providerId,
           },
@@ -1074,6 +1100,185 @@ class _RideRequestsProfileCard extends StatelessWidget {
   );
 }
 
+class _FavoriteRoutesProfileCard extends StatelessWidget {
+  const _FavoriteRoutesProfileCard({required this.provider});
+
+  final FavoriteRoutesProvider provider;
+
+  @override
+  Widget build(BuildContext context) => Obx(
+    () => _ProfileCard(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        onTap: () => Get.toNamed<void>(AppRoutes.favoriteRoutes.value),
+        child: Padding(
+          padding: const EdgeInsets.all(Dimensions.twelve),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF2D0),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  color: Colours.red,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(width: Dimensions.twelve),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Favourite routes',
+                      style: TextStyle(
+                        color: Colours.primaryOne,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      provider.favorites.isEmpty
+                          ? 'Keep your regular routes easy to find.'
+                          : '${provider.favorites.length} saved route'
+                                '${provider.favorites.length == 1 ? '' : 's'}',
+                      style: const TextStyle(
+                        color: Colours.charcoalLight,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Colours.charcoalLight,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _SavedPlacesProfileCard extends StatelessWidget {
+  const _SavedPlacesProfileCard({required this.provider});
+
+  final SavedPlacesProvider provider;
+
+  @override
+  Widget build(BuildContext context) => Obx(
+    () => _ProfileShortcutCard(
+      icon: Icons.bookmark_rounded,
+      iconColor: Colours.blueThree,
+      iconBackground: const Color(0xFFE6F1F5),
+      title: 'Saved places',
+      subtitle: provider.places.isEmpty
+          ? 'Add Home, Work, and regular destinations.'
+          : '${provider.places.length} saved place'
+                '${provider.places.length == 1 ? '' : 's'}',
+      onTap: () => Get.toNamed<void>(AppRoutes.savedPlaces.value),
+    ),
+  );
+}
+
+class _SafetyProfileCard extends StatelessWidget {
+  const _SafetyProfileCard({required this.provider});
+
+  final SafetyProvider provider;
+
+  @override
+  Widget build(BuildContext context) => Obx(
+    () => _ProfileShortcutCard(
+      icon: Icons.health_and_safety_rounded,
+      iconColor: Colours.red,
+      iconBackground: const Color(0xFFFFEBEE),
+      title: 'Safety toolkit',
+      subtitle: provider.contacts.isEmpty
+          ? 'Add emergency contacts and share journeys.'
+          : '${provider.contacts.length} emergency contact'
+                '${provider.contacts.length == 1 ? '' : 's'} ready',
+      onTap: () => Get.toNamed<void>(AppRoutes.safetyToolkit.value),
+    ),
+  );
+}
+
+class _ProfileShortcutCard extends StatelessWidget {
+  const _ProfileShortcutCard({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBackground,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBackground;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => _ProfileCard(
+    padding: EdgeInsets.zero,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(Dimensions.twelve),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: iconBackground,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 21),
+            ),
+            const SizedBox(width: Dimensions.twelve),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colours.primaryOne,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Colours.charcoalLight,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Colours.charcoalLight,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 class _DriverAccountCard extends StatelessWidget {
   const _DriverAccountCard({required this.provider});
 
@@ -1372,57 +1577,95 @@ class _TravelLogStatus extends StatelessWidget {
   );
 }
 
-class _SocialSignInButton extends StatelessWidget {
-  const _SocialSignInButton({
-    required this.label,
+class _ProviderSignInButton extends StatelessWidget {
+  const _ProviderSignInButton({
+    required this.provider,
     required this.onPressed,
-    required this.brandColor,
-    this.icon,
-    this.brand,
+    required this.isLoading,
+    required this.isDisabled,
   });
 
-  final String label;
-  final IconData? icon;
-  final String? brand;
-  final VoidCallback onPressed;
-  final Color brandColor;
+  final SocialSignInProvider provider;
+  final Future<bool> Function() onPressed;
+  final bool isLoading;
+  final bool isDisabled;
 
   @override
-  Widget build(BuildContext context) => OutlinedButton(
-    onPressed: onPressed,
-    style: OutlinedButton.styleFrom(
-      foregroundColor: _ProfileStyles.textPrimary,
-      backgroundColor: Colors.white,
-      minimumSize: const Size.fromHeight(44),
-      side: const BorderSide(color: _ProfileStyles.border),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(Dimensions.eight)),
-      ),
-    ),
-    child: Stack(
-      alignment: Alignment.center,
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: SizedBox(
-            width: 28,
-            child: icon != null
-                ? Icon(icon, size: 22, color: brandColor)
-                : Text(
-                    brand!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: brandColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+  Widget build(BuildContext context) {
+    final isApple = provider == SocialSignInProvider.apple;
+    final foregroundColor = isApple ? Colors.white : Colours.primaryOne;
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 180),
+      opacity: isDisabled && !isLoading ? 0.55 : 1,
+      child: Material(
+        color: isApple ? Colours.primaryOne : Colors.white,
+        elevation: isApple ? 0 : 1,
+        shadowColor: Colours.primaryOne.withValues(alpha: 0.18),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: isApple ? Colours.primaryOne : const Color(0xFFD8E1E4),
           ),
         ),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-      ],
-    ),
-  );
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: isDisabled ? null : onPressed,
+          child: SizedBox(
+            height: 52,
+            child: Row(
+              children: [
+                const SizedBox(width: 9),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isApple
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : const Color(0xFFF3F7F8),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: isLoading
+                      ? SizedBox.square(
+                          dimension: 17,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: foregroundColor,
+                          ),
+                        )
+                      : Icon(
+                          isApple ? Icons.apple : Icons.g_mobiledata_rounded,
+                          color: isApple
+                              ? Colors.white
+                              : const Color(0xFF4285F4),
+                          size: isApple ? 23 : 30,
+                        ),
+                ),
+                Expanded(
+                  child: Text(
+                    isApple ? 'Continue with Apple' : 'Continue with Google',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: foregroundColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  color: foregroundColor.withValues(alpha: 0.62),
+                  size: 18,
+                ),
+                const SizedBox(width: 15),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _EmailVerificationCard extends StatelessWidget {
@@ -1473,7 +1716,7 @@ class _ProfileMessageBanner extends StatelessWidget {
   final MyProfileProvider provider;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() {
     final error = provider.errorMessage.value;
     final success = provider.successMessage.value;
     if (error == null && success == null) {
@@ -1496,7 +1739,7 @@ class _ProfileMessageBanner extends StatelessWidget {
         ),
       ],
     );
-  }
+  });
 }
 
 InputDecoration _profileInputDecoration({

@@ -9,6 +9,7 @@ import 'package:TaxiApp/src/features/landing/enums/day_of_week.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_spots_available.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_week_pill.dart';
 import 'package:TaxiApp/src/features/landing/widgets/ride_request_action.dart';
+import 'package:TaxiApp/src/features/favorite_routes/widgets/favorite_route_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -44,9 +45,17 @@ class NearbyTaxiItemWidget extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildValueItem(
-                      label: Get.appLocalizations.from,
-                      value: route.originName,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _buildValueItem(
+                            label: Get.appLocalizations.from,
+                            value: route.originName,
+                          ),
+                        ),
+                        FavoriteRouteButton(route: route),
+                      ],
                     ).paddingOnly(bottom: Dimensions.eight),
                     _buildValueItem(
                       label: Get.appLocalizations.to,

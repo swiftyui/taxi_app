@@ -6,11 +6,13 @@ import 'package:TaxiApp/src/core/models/destination_search_result.dart';
 import 'package:TaxiApp/src/core/models/taxi_journey.dart';
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
 import 'package:TaxiApp/src/core/providers/driver_reviews_provider/driver_reviews_provider.dart';
+import 'package:TaxiApp/src/core/providers/route_occupancy_provider/route_occupancy_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/nearby_taxi_route_model.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/providers/travel_log_provider/travel_log_provider.dart';
 import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:TaxiApp/src/core/services/journey_progress_service.dart';
+import 'package:TaxiApp/src/core/services/google_walking_directions_service.dart';
 import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
@@ -116,7 +118,9 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
         return;
       }
 
-      journey.value = plannedJourney;
+      journey.value = await GoogleWalkingDirectionsService().enrichJourney(
+        plannedJourney,
+      );
       selectedAction.value = ActionType.journeyReady;
     } catch (_) {
       journeyError.value = 'Unable to plan this journey. Please try again.';
@@ -142,11 +146,14 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
       _updateJourneyProgress(
         LatLng(currentPosition.latitude, currentPosition.longitude),
       );
+    } else {
+      _syncRouteOccupancy(activeJourney, 0, isComplete: false);
     }
     MapsProvider.create().updateMarkers();
   }
 
   void clearJourney() {
+    unawaited(RouteOccupancyProvider.create().leaveRoute());
     _clearJourneyState();
     selectedAction.value = null;
     MapsProvider.create().updateMarkers();
@@ -177,14 +184,48 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
     activeJourneyStepIndex.value = progress.stepIndex;
     distanceToNextStepMeters.value = progress.distanceToNextStepMeters;
     isJourneyComplete.value = progress.isComplete;
+    _syncRouteOccupancy(
+      activeJourney,
+      progress.stepIndex,
+      isComplete: progress.isComplete,
+    );
 
     if (progress.isComplete) {
       selectedAction.value = ActionType.journeyCompleted;
       unawaited(_completeActiveTravelLog());
     }
+
     if (progress.stepIndex != previousStepIndex || progress.isComplete) {
       MapsProvider.create().updateMarkers();
     }
+  }
+
+  void _syncRouteOccupancy(
+    TaxiJourney activeJourney,
+    int stepIndex, {
+    required bool isComplete,
+  }) {
+    final occupancyProvider = RouteOccupancyProvider.create();
+    if (isComplete ||
+        stepIndex < 0 ||
+        stepIndex >= activeJourney.steps.length ||
+        activeJourney.steps[stepIndex].type != JourneyStepType.taxi) {
+      unawaited(occupancyProvider.leaveRoute());
+      return;
+    }
+    final taxiLegIndex =
+        activeJourney.steps
+            .take(stepIndex + 1)
+            .where((step) => step.type == JourneyStepType.taxi)
+            .length -
+        1;
+    if (taxiLegIndex < 0 || taxiLegIndex >= activeJourney.taxiLegs.length) {
+      unawaited(occupancyProvider.leaveRoute());
+      return;
+    }
+    unawaited(
+      occupancyProvider.enterRoute(activeJourney.taxiLegs[taxiLegIndex].route),
+    );
   }
 
   Future<void> _completeActiveTravelLog() async {

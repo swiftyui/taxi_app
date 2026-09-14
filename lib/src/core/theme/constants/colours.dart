@@ -66,5 +66,4 @@ abstract class Colours {
   /// `Custom Colors`
   static const hotPink = Color(0xFFff2173);
   static const turquoise = Color(0xFF03bfc3);
-  static const facebookBlue = Color(0xFF1977f2);
 }

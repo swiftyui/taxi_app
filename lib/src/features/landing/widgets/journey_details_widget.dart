@@ -2,6 +2,7 @@ import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/models/taxi_journey.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
+import 'package:TaxiApp/src/core/routes/routes.dart';
 import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
@@ -104,20 +105,17 @@ class JourneyDetailsWidget extends StatelessWidget {
                             _actionsProvider.activeJourneyStepIndex.value),
               ),
             _JourneyNotice(
-              icon: Icons.info_outline,
-              message: Get.appLocalizations.walkingEstimateNotice,
+              icon:
+                  journey.pedestrianSteps.every(
+                    (step) => step.hasMappedWalkingRoute,
+                  )
+                  ? Icons.map_outlined
+                  : Icons.info_outline,
+              message: _walkingRouteNotice(journey),
             ),
-            if (journey.listedFares.isNotEmpty)
-              Text(
-                journey.listedFares.length == 1
-                    ? 'Listed fare: '
-                          'R${journey.listedFares.single.toStringAsFixed(2)}'
-                    : 'Listed route fares: '
-                          '${journey.listedFares.map((fare) => 'R${fare.toStringAsFixed(2)}').join(' + ')}',
-                style: Get.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ).paddingOnly(bottom: Dimensions.twelve),
+            _FareEstimateCard(
+              journey: journey,
+            ).paddingOnly(bottom: Dimensions.twelve),
             Text(
               'Rate your taxi route${journey.taxiLegs.length == 1 ? '' : 's'}',
               style: Get.textTheme.titleSmall?.copyWith(
@@ -158,11 +156,173 @@ class JourneyDetailsWidget extends StatelessWidget {
                       ActionType.journeyCompleted,
               onTap: _actionsProvider.startJourney,
             ),
+            OutlinedButton.icon(
+              onPressed: () => Get.toNamed<void>(AppRoutes.safetyToolkit.value),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(46),
+                foregroundColor: Colours.blueThree,
+                side: const BorderSide(color: Colours.blueThree),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(Dimensions.eight),
+                ),
+              ),
+              icon: const Icon(Icons.health_and_safety_outlined, size: 19),
+              label: const Text('Safety & share journey'),
+            ).paddingOnly(top: Dimensions.eight),
           ],
         ],
       ),
     );
   });
+
+  String _walkingRouteNotice(TaxiJourney journey) {
+    final pedestrianSteps = journey.pedestrianSteps.toList(growable: false);
+    final mappedCount = pedestrianSteps
+        .where((step) => step.hasMappedWalkingRoute)
+        .length;
+    if (mappedCount == pedestrianSteps.length) {
+      return 'Walking paths, distances, and times use Google Maps '
+          'pedestrian directions.';
+    }
+    if (mappedCount > 0) {
+      return 'Google Maps pedestrian directions are shown where available. '
+          'Remaining walking links are straight-line estimates.';
+    }
+    return Get.appLocalizations.walkingEstimateNotice;
+  }
+}
+
+class _FareEstimateCard extends StatelessWidget {
+  const _FareEstimateCard({required this.journey});
+
+  final TaxiJourney journey;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(Dimensions.twelve),
+    decoration: BoxDecoration(
+      color: const Color(0xFFFFF8E5),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFF0D88B)),
+    ),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: Colours.yellow,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.payments_outlined,
+                color: Colours.primaryOne,
+                size: 19,
+              ),
+            ),
+            const SizedBox(width: Dimensions.eight),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Estimated taxi fare',
+                    style: TextStyle(
+                      color: Colours.primaryOne,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    'Walking connections are free',
+                    style: TextStyle(
+                      color: Colours.charcoalLight,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              journey.estimatedFare > 0
+                  ? 'R${journey.estimatedFare.toStringAsFixed(2)}'
+                  : 'Unavailable',
+              style: const TextStyle(
+                color: Colours.primaryOne,
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 20, color: Color(0xFFF0D88B)),
+        for (var index = 0; index < journey.taxiLegs.length; index++)
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: index == journey.taxiLegs.length - 1 ? 0 : 7,
+            ),
+            child: Row(
+              children: [
+                Text(
+                  'Taxi ${index + 1}',
+                  style: const TextStyle(
+                    color: Colours.charcoalLight,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    journey.taxiLegs[index].route.properties.destname,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colours.primaryOne,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+                Text(
+                  journey.taxiLegs[index].route.properties.fare > 0
+                      ? 'R${journey.taxiLegs[index].route.properties.fare.toStringAsFixed(2)}'
+                      : 'Not listed',
+                  style: const TextStyle(
+                    color: Colours.primaryOne,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (!journey.hasCompleteFareEstimate)
+          const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                color: Colours.charcoalLight,
+                size: 14,
+              ),
+              SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  'Some route fares are not listed, so the total may be higher.',
+                  style: TextStyle(color: Colours.charcoalLight, fontSize: 9),
+                ),
+              ),
+            ],
+          ).paddingOnly(top: Dimensions.eight),
+        const Text(
+          'Confirm the fare with the driver before boarding.',
+          style: TextStyle(color: Colours.charcoalLight, fontSize: 9),
+        ).paddingOnly(top: Dimensions.eight),
+      ],
+    ),
+  );
 }
 
 class _JourneyStepTile extends StatelessWidget {

@@ -1,9 +1,11 @@
 import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
+import 'package:TaxiApp/src/core/providers/favorite_routes_provider/favorite_routes_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
+import 'package:TaxiApp/src/core/routes/routes.dart';
 import 'package:TaxiApp/src/core/widgets/loaders/hambago_shimmer.dart';
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_item_widget.dart';
 import 'package:TaxiApp/src/features/landing/widgets/journey_details_widget.dart';
@@ -16,6 +18,8 @@ class LandingBottomSheet extends StatelessWidget {
 
   final TaxiRoutesProvider _taxiRoutesProvider = TaxiRoutesProvider.create();
   final ActionsProvider _actionsProvider = ActionsProvider.create();
+  final FavoriteRoutesProvider _favoriteRoutesProvider =
+      FavoriteRoutesProvider.create();
 
   @override
   Widget build(BuildContext context) => DraggableScrollableSheet(
@@ -83,13 +87,63 @@ class LandingBottomSheet extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              Get.appLocalizations.nearbyTaxis,
-              style: Get.textTheme.bodyMedium?.copyWith(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
-            ).paddingOnly(bottom: Dimensions.eight, left: Dimensions.eight),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    Get.appLocalizations.nearbyTaxis,
+                    style: Get.textTheme.bodyMedium?.copyWith(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Obx(() {
+                  final favoriteCount =
+                      _favoriteRoutesProvider.favorites.length;
+                  return Material(
+                    color: const Color(0xFFFFF2D0),
+                    borderRadius: BorderRadius.circular(99),
+                    child: InkWell(
+                      onTap: () =>
+                          Get.toNamed<void>(AppRoutes.favoriteRoutes.value),
+                      borderRadius: BorderRadius.circular(99),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.favorite_rounded,
+                              color: Colours.red,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              _favoriteRoutesProvider.isSignedIn
+                                  ? 'Saved $favoriteCount'
+                                  : 'Saved',
+                              style: const TextStyle(
+                                color: Colours.primaryOne,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ).paddingOnly(
+              bottom: Dimensions.eight,
+              left: Dimensions.eight,
+              right: Dimensions.eight,
+            ),
 
             _taxiRoutesProvider.isLoading.value
                 ? const TaxiRoutesShimmer()

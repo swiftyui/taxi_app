@@ -149,6 +149,11 @@ void main() {
       expect(journey, isNotNull);
       expect(journey!.taxiLegs, hasLength(2));
       expect(journey.transferCount, 1);
+      expect(
+        journey.estimatedFare,
+        firstRoute.properties.fare + secondRoute.properties.fare,
+      );
+      expect(journey.hasCompleteFareEstimate, isTrue);
       expect(journey.steps.map((step) => step.type), [
         JourneyStepType.walk,
         JourneyStepType.taxi,

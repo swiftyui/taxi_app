@@ -1,5 +1,4 @@
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
-import 'package:TaxiApp/src/core/extensions/typed_extensions.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
 import 'package:TaxiApp/src/core/widgets/expandables/expandable_item.dart';
 import 'package:TaxiApp/src/core/widgets/ratings/taxi_ratings.dart';
@@ -8,6 +7,7 @@ import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_spots_available
 import 'package:TaxiApp/src/features/landing/widgets/nearby_taxi_week_pill.dart';
 import 'package:TaxiApp/src/features/landing/widgets/ride_request_action.dart';
 import 'package:TaxiApp/src/features/landing/widgets/taxi_actions.dart';
+import 'package:TaxiApp/src/features/favorite_routes/widgets/favorite_route_button.dart';
 import 'package:flutter/material.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
@@ -30,12 +30,13 @@ class _SelectedRouteDetailsWidgetState
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(Dimensions.eight),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFDCE7EA)),
             boxShadow: [
               BoxShadow(
-                color: Colours.primaryOne.withValues(alpha: .2),
-                blurRadius: Dimensions.four,
-                offset: const Offset(0, 2),
+                color: Colours.primaryOne.withValues(alpha: .1),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -47,23 +48,41 @@ class _SelectedRouteDetailsWidgetState
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: () => _actionsProvider.clearSelectedRoute(),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colours.charcoal.lighten(0.75),
-                          shape: BoxShape.circle,
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Route details',
+                              style: TextStyle(
+                                color: Colours.primaryOne,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            Text(
+                              'Taxi route information',
+                              style: TextStyle(
+                                color: Colours.charcoalLight,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ],
                         ),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.black,
-                          size: 22,
-                        ).paddingAll(Dimensions.four),
                       ),
-                    ),
-                  ),
+                      FavoriteRouteButton(
+                        route: _actionsProvider.selectedRoute.value!,
+                        size: 28,
+                      ),
+                      _RouteHeaderAction(
+                        tooltip: 'Close route details',
+                        icon: Icons.close_rounded,
+                        onTap: _actionsProvider.clearSelectedRoute,
+                      ),
+                    ],
+                  ).paddingOnly(bottom: Dimensions.twelve),
                   _buildValueItem(
                     label: Get.appLocalizations.from,
                     value:
@@ -158,7 +177,7 @@ class _SelectedRouteDetailsWidgetState
                 ],
               ),
             ],
-          ).paddingAll(Dimensions.eight),
+          ).paddingAll(Dimensions.twelve),
         ).paddingOnly(
           left: Dimensions.eight,
           right: Dimensions.eight,
@@ -191,4 +210,42 @@ class _SelectedRouteDetailsWidgetState
           ),
         ],
       );
+}
+
+class _RouteHeaderAction extends StatelessWidget {
+  const _RouteHeaderAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: tooltip,
+    child: SizedBox.square(
+      dimension: 40,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: Center(
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE9EBEE),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colours.primaryOne, size: 17),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }

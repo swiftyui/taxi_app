@@ -160,6 +160,85 @@ service cloud.firestore {
         && request.resource.data.status in ['inProgress', 'completed'];
     }
 
+    match /users/{userId}/favoriteRoutes/{featureId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'featureId',
+          'routeId',
+          'originName',
+          'destinationName',
+          'associationName',
+          'fare',
+          'addedAt'
+        ])
+        && request.resource.data.featureId is int
+        && featureId == string(request.resource.data.featureId)
+        && request.resource.data.routeId is string
+        && request.resource.data.routeId.size() >= 1
+        && request.resource.data.routeId.size() <= 160
+        && request.resource.data.originName is string
+        && request.resource.data.originName.size() >= 1
+        && request.resource.data.originName.size() <= 160
+        && request.resource.data.destinationName is string
+        && request.resource.data.destinationName.size() >= 1
+        && request.resource.data.destinationName.size() <= 160
+        && request.resource.data.associationName is string
+        && request.resource.data.associationName.size() <= 160
+        && request.resource.data.fare is number
+        && request.resource.data.fare >= 0
+        && request.resource.data.fare <= 10000
+        && request.resource.data.addedAt == request.time;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/savedPlaces/{placeId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'type',
+          'label',
+          'address',
+          'location',
+          'updatedAt'
+        ])
+        && request.resource.data.type in ['home', 'work', 'custom']
+        && request.resource.data.label is string
+        && request.resource.data.label.size() >= 2
+        && request.resource.data.label.size() <= 60
+        && request.resource.data.address is string
+        && request.resource.data.address.size() <= 240
+        && request.resource.data.location is latlng
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/emergencyContacts/{contactId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'phoneNumber',
+          'relationship',
+          'isPrimary',
+          'updatedAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.phoneNumber is string
+        && request.resource.data.phoneNumber.size() >= 10
+        && request.resource.data.phoneNumber.size() <= 20
+        && request.resource.data.relationship is string
+        && request.resource.data.relationship.size() <= 60
+        && request.resource.data.isPrimary is bool
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
     match /users/{userId}/hambaPointAwards/{awardId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null && (
@@ -328,6 +407,31 @@ service cloud.firestore {
         && request.resource.data.expiredAt == request.time;
       allow delete: if request.auth != null
         && resource.data.riderId == request.auth.uid;
+    }
+
+    match /activeRideOccupancy/{userId} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'routeFeatureId',
+          'routeId',
+          'enteredAt',
+          'expiresAt'
+        ])
+        && request.resource.data.userId == userId
+        && request.resource.data.routeFeatureId is int
+        && request.resource.data.routeId is string
+        && request.resource.data.routeId.size() >= 1
+        && request.resource.data.routeId.size() <= 160
+        && request.resource.data.enteredAt == request.time
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt
+          <= request.time + duration.value(30, 'm');
+      allow delete: if request.auth != null
+        && request.auth.uid == userId;
     }
   }
 }

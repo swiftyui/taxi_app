@@ -11,6 +11,8 @@ class JourneyStep {
     required this.detail,
     required this.distanceMeters,
     required this.path,
+    this.duration,
+    this.hasMappedWalkingRoute = false,
   });
 
   final JourneyStepType type;
@@ -18,8 +20,26 @@ class JourneyStep {
   final String detail;
   final double distanceMeters;
   final List<LatLng> path;
+  final Duration? duration;
+  final bool hasMappedWalkingRoute;
 
   LatLng get destination => path.last;
+
+  JourneyStep withWalkingRoute({
+    required List<LatLng> path,
+    required double distanceMeters,
+    required Duration duration,
+    required String instruction,
+    required String detail,
+  }) => JourneyStep(
+    type: type,
+    instruction: instruction,
+    detail: detail,
+    distanceMeters: distanceMeters,
+    path: path,
+    duration: duration,
+    hasMappedWalkingRoute: true,
+  );
 }
 
 class TaxiJourneyLeg {
@@ -60,4 +80,24 @@ class TaxiJourney {
       .map((leg) => leg.route.properties.fare)
       .where((fare) => fare > 0)
       .toList(growable: false);
+
+  double get estimatedFare =>
+      listedFares.fold(0, (total, fare) => total + fare);
+
+  bool get hasCompleteFareEstimate =>
+      taxiLegs.isNotEmpty &&
+      taxiLegs.every((leg) => leg.route.properties.fare > 0);
+
+  Iterable<JourneyStep> get pedestrianSteps => steps.where(
+    (step) =>
+        step.type == JourneyStepType.walk ||
+        step.type == JourneyStepType.transfer,
+  );
+
+  TaxiJourney withSteps(List<JourneyStep> updatedSteps) => TaxiJourney(
+    origin: origin,
+    destination: destination,
+    taxiLegs: taxiLegs,
+    steps: updatedSteps,
+  );
 }

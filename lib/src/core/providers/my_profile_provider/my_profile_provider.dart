@@ -1,12 +1,13 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:TaxiApp/src/core/providers/route_occupancy_provider/route_occupancy_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
-enum SocialSignInProvider { google, facebook, apple }
+enum SocialSignInProvider { google, apple }
 
 class MyProfileProvider extends GetxController {
   MyProfileProvider({
@@ -27,6 +28,8 @@ class MyProfileProvider extends GetxController {
 
   final Rxn<User> user = Rxn<User>();
   final RxBool isBusy = false.obs;
+  final Rxn<SocialSignInProvider> activeSocialProvider =
+      Rxn<SocialSignInProvider>();
   final RxnString errorMessage = RxnString();
   final RxnString successMessage = RxnString();
 
@@ -73,29 +76,40 @@ class MyProfileProvider extends GetxController {
     await credential.user?.reload();
   }, success: 'Account created. Check your email to verify your address.');
 
-  Future<bool> signInWithSocialProvider(SocialSignInProvider provider) =>
-      _runAuthAction(() async {
-        final authProvider = switch (provider) {
-          SocialSignInProvider.google =>
-            GoogleAuthProvider()
-              ..addScope('email')
-              ..addScope('profile'),
-          SocialSignInProvider.facebook =>
-            FacebookAuthProvider()
-              ..addScope('email')
-              ..addScope('public_profile'),
-          SocialSignInProvider.apple =>
-            AppleAuthProvider()
-              ..addScope('email')
-              ..addScope('name'),
-        };
+  Future<bool> signInWithGoogle() => _signInWithProvider(
+    SocialSignInProvider.google,
+    GoogleAuthProvider()
+      ..addScope('email')
+      ..addScope('profile')
+      ..setCustomParameters({'prompt': 'select_account'}),
+  );
 
-        if (kIsWeb) {
-          await _auth.signInWithPopup(authProvider);
-        } else {
-          await _auth.signInWithProvider(authProvider);
-        }
+  Future<bool> signInWithApple() => _signInWithProvider(
+    SocialSignInProvider.apple,
+    AppleAuthProvider()
+      ..addScope('email')
+      ..addScope('name'),
+  );
+
+  Future<bool> _signInWithProvider(
+    SocialSignInProvider provider,
+    AuthProvider authProvider,
+  ) async {
+    if (isBusy.value) {
+      return false;
+    }
+    activeSocialProvider.value = provider;
+    try {
+      return await _runAuthAction(() async {
+        final credential = kIsWeb
+            ? await _auth.signInWithPopup(authProvider)
+            : await _auth.signInWithProvider(authProvider);
+        await credential.user?.reload();
       });
+    } finally {
+      activeSocialProvider.value = null;
+    }
+  }
 
   Future<bool> sendPasswordReset(String email) => _runAuthAction(() async {
     await _auth.sendPasswordResetEmail(email: email.trim());
@@ -153,6 +167,7 @@ class MyProfileProvider extends GetxController {
   }, success: 'Profile picture updated.');
 
   Future<void> signOut() async {
+    await RouteOccupancyProvider.create().leaveRoute();
     await _runAuthAction(_auth.signOut);
   }
 
@@ -226,9 +241,15 @@ class MyProfileProvider extends GetxController {
     'operation-not-allowed' =>
       'This sign-in method has not been enabled for HambaGo.',
     'popup-closed-by-user' ||
-    'web-context-cancelled' => 'Sign-in was cancelled.',
+    'web-context-cancelled' ||
+    'cancelled-popup-request' ||
+    'canceled' => 'Sign-in was cancelled.',
     'account-exists-with-different-credential' =>
       'This email is already linked to another sign-in method.',
+    'missing-or-invalid-nonce' =>
+      'Apple sign-in could not be verified. Please try again.',
+    'unauthorized-domain' =>
+      'This app domain is not authorised for social sign-in.',
     'not-signed-in' => error.message ?? 'Sign in to continue.',
     _ => error.message ?? 'Authentication failed. Please try again.',
   };

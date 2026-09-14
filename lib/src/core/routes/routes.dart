@@ -1,10 +1,13 @@
 import 'package:TaxiApp/src/core/routes/permissions_middleware.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_screen.dart';
+import 'package:TaxiApp/src/features/favorite_routes/screens/favorite_routes_screen.dart';
 import 'package:TaxiApp/src/features/my_profile/screens/my_profile_screen.dart';
 import 'package:TaxiApp/src/features/my_profile/screens/driver_account_screen.dart';
 import 'package:TaxiApp/src/features/permissions_carousel/screens/permissions_carousel_screen.dart';
 import 'package:TaxiApp/src/features/search_routes/screens/search_routes_screen.dart';
 import 'package:TaxiApp/src/features/ride_requests/screens/ride_requests_screen.dart';
+import 'package:TaxiApp/src/features/safety/screens/safety_toolkit_screen.dart';
+import 'package:TaxiApp/src/features/saved_places/screens/saved_places_screen.dart';
 import 'package:get/get.dart';
 
 enum AppRoutes {
@@ -13,7 +16,10 @@ enum AppRoutes {
   searchRoutes('/search-routes'),
   myProfile('/my-profile'),
   driverAccount('/driver-account'),
-  rideRequests('/ride-requests');
+  rideRequests('/ride-requests'),
+  favoriteRoutes('/favorite-routes'),
+  savedPlaces('/saved-places'),
+  safetyToolkit('/safety-toolkit');
 
   const AppRoutes(this.value);
 
@@ -46,4 +52,13 @@ final pages = [
     page: () => const DriverAccountScreen(),
   ),
   GetPage(name: AppRoutes.rideRequests.value, page: () => RideRequestsScreen()),
+  GetPage(
+    name: AppRoutes.favoriteRoutes.value,
+    page: () => FavoriteRoutesScreen(),
+  ),
+  GetPage(name: AppRoutes.savedPlaces.value, page: () => SavedPlacesScreen()),
+  GetPage(
+    name: AppRoutes.safetyToolkit.value,
+    page: () => SafetyToolkitScreen(),
+  ),
 ];

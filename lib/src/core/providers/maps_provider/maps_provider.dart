@@ -147,6 +147,8 @@ class MapsProvider extends GetxController {
                   : 6,
               patterns: journey.steps[stepIndex].type == JourneyStepType.taxi
                   ? const []
+                  : journey.steps[stepIndex].hasMappedWalkingRoute
+                  ? [PatternItem.dot, PatternItem.gap(8)]
                   : [PatternItem.dash(18), PatternItem.gap(10)],
             ),
         };
@@ -231,7 +233,11 @@ class MapsProvider extends GetxController {
     if (actionsProvider.selectedAction.value == ActionType.journeyCompleted) {
       return Colors.grey;
     }
-    return step.type == JourneyStepType.taxi ? Colors.amber : Colors.blueGrey;
+    return step.type == JourneyStepType.taxi
+        ? Colors.amber
+        : step.hasMappedWalkingRoute
+        ? Colors.blue
+        : Colors.blueGrey;
   }
 
   void _fitPoints(List<LatLng> points) {
