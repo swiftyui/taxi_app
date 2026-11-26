@@ -1,5 +1,4 @@
 import java.util.Properties
-import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
@@ -8,6 +7,37 @@ plugins {
     // END: FlutterFire Configuration
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val releaseSigningFile = rootProject.file("key.properties")
+val releaseSigningProperties = Properties().apply {
+    if (releaseSigningFile.isFile) {
+        releaseSigningFile.inputStream().use { load(it) }
+    }
+}
+val releaseKeystore = releaseSigningProperties.getProperty("storeFile")
+    ?.takeIf { it.isNotBlank() }
+    ?.let { file(it) }
+val missingSigningProperties = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+    .filter { releaseSigningProperties.getProperty(it).isNullOrBlank() }
+val releaseSigningError = when {
+    !releaseSigningFile.isFile ->
+        "Android release signing requires android/key.properties. Restore it with the settings for the HambaGo upload keystore."
+    missingSigningProperties.isNotEmpty() ->
+        "Android release signing is missing these properties in android/key.properties: ${missingSigningProperties.joinToString()}."
+    releaseKeystore?.isFile != true ->
+        "Android release signing could not find the keystore configured as storeFile in android/key.properties."
+    else -> null
+}
+
+val validateReleaseUploadKey = tasks.register("validateReleaseUploadKey") {
+    doLast {
+        if (releaseSigningError != null) throw GradleException(releaseSigningError)
+    }
+}
+
+tasks.matching { it.name == "preReleaseBuild" || it.name == "signReleaseBundle" }.configureEach {
+    dependsOn(validateReleaseUploadKey)
 }
 
 android {
@@ -19,21 +49,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    
-    // Loaded directly within the scope of the android block
-    val keystoreProperties = Properties()
-    val keystorePropertiesFile = rootProject.file("key.properties")
-    if (keystorePropertiesFile.exists()) {
-        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-    }
-    
-    signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as? String
-            keyPassword = keystoreProperties["keyPassword"] as? String
-            storeFile = (keystoreProperties["storeFile"] as? String)?.let { file(it) }
-            storePassword = keystoreProperties["storePassword"] as? String
+    val releaseSigningConfig = if (releaseSigningError == null) {
+        signingConfigs.create("release") {
+            keyAlias = releaseSigningProperties.getProperty("keyAlias")
+            keyPassword = releaseSigningProperties.getProperty("keyPassword")
+            storeFile = releaseKeystore
+            storePassword = releaseSigningProperties.getProperty("storePassword")
         }
+    } else {
+        null
     }
 
     defaultConfig {
@@ -46,8 +70,8 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
-            
+            signingConfig = releaseSigningConfig
+
             // Fixed property names for modern Kotlin DSL
             isMinifyEnabled = true
             isShrinkResources = true
