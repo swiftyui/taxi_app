@@ -41,48 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCXurWCKWE_w33ZZ4Ju3ZZq-6-LTyNRfYs',
-    appId: '1:613539779199:web:2098b780fc9facb300254a',
-    messagingSenderId: '613539779199',
-    projectId: 'taxi-app-eb3a5',
-    authDomain: 'taxi-app-eb3a5.firebaseapp.com',
-    storageBucket: 'taxi-app-eb3a5.firebasestorage.app',
-    measurementId: 'G-P6X86XZCT5',
+    apiKey: 'AIzaSyC_UHasBfWb9iRu6KYULQrak3YCzPpZ1tA',
+    appId: '1:670605467285:web:9ad2c0320d282aa24d859c',
+    messagingSenderId: '670605467285',
+    projectId: 'hambago-57327',
+    authDomain: 'hambago-57327.firebaseapp.com',
+    storageBucket: 'hambago-57327.firebasestorage.app',
+    measurementId: 'G-VBE277DFKJ',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBeYXlmZFYI5eIAVHK7YHarbDeowLTRZ24',
-    appId: '1:613539779199:android:98ced41691bdb31100254a',
-    messagingSenderId: '613539779199',
-    projectId: 'taxi-app-eb3a5',
-    storageBucket: 'taxi-app-eb3a5.firebasestorage.app',
+    apiKey: 'AIzaSyCzS1dBRzo2nvUlrBGCT5JsqNhHcUK8Y2A',
+    appId: '1:670605467285:android:4cbd07887e6c17aa4d859c',
+    messagingSenderId: '670605467285',
+    projectId: 'hambago-57327',
+    storageBucket: 'hambago-57327.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCH4dJp6c5LAxQ9LK1FoEtaXPceCDvp7vU',
-    appId: '1:613539779199:ios:277275cf894df9e200254a',
-    messagingSenderId: '613539779199',
-    projectId: 'taxi-app-eb3a5',
-    storageBucket: 'taxi-app-eb3a5.firebasestorage.app',
+    apiKey: 'AIzaSyCmqwH1kp75y8_GsrXzM6m-hBJ5rXeDPO4',
+    appId: '1:670605467285:ios:a16dbdd4e65a49794d859c',
+    messagingSenderId: '670605467285',
+    projectId: 'hambago-57327',
+    storageBucket: 'hambago-57327.firebasestorage.app',
     iosBundleId: 'com.vanzylarno.taxiApp',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCH4dJp6c5LAxQ9LK1FoEtaXPceCDvp7vU',
-    appId: '1:613539779199:ios:277275cf894df9e200254a',
-    messagingSenderId: '613539779199',
-    projectId: 'taxi-app-eb3a5',
-    storageBucket: 'taxi-app-eb3a5.firebasestorage.app',
+    apiKey: 'AIzaSyCmqwH1kp75y8_GsrXzM6m-hBJ5rXeDPO4',
+    appId: '1:670605467285:ios:a16dbdd4e65a49794d859c',
+    messagingSenderId: '670605467285',
+    projectId: 'hambago-57327',
+    storageBucket: 'hambago-57327.firebasestorage.app',
     iosBundleId: 'com.vanzylarno.taxiApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyCXurWCKWE_w33ZZ4Ju3ZZq-6-LTyNRfYs',
-    appId: '1:613539779199:web:81d405d8b118be2100254a',
-    messagingSenderId: '613539779199',
-    projectId: 'taxi-app-eb3a5',
-    authDomain: 'taxi-app-eb3a5.firebaseapp.com',
-    storageBucket: 'taxi-app-eb3a5.firebasestorage.app',
-    measurementId: 'G-ZFBXCB6LHD',
+    apiKey: 'AIzaSyC_UHasBfWb9iRu6KYULQrak3YCzPpZ1tA',
+    appId: '1:670605467285:web:a32e301557e1ce734d859c',
+    messagingSenderId: '670605467285',
+    projectId: 'hambago-57327',
+    authDomain: 'hambago-57327.firebaseapp.com',
+    storageBucket: 'hambago-57327.firebasestorage.app',
+    measurementId: 'G-B5VTT1HQ51',
   );
 }
