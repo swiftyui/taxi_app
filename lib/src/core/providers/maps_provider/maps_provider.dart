@@ -3,297 +3,206 @@ import 'package:TaxiApp/src/core/models/taxi_journey.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
+import 'package:TaxiApp/src/core/theme/constants/colours.dart';
+import 'package:TaxiApp/src/core/widgets/hamba_map.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 class MapsProvider extends GetxController {
-  MapsProvider();
+  static const _taxiColor = Color(0xFF007A70);
+  static const _walkEstimateColor = Color(0xFF43536B);
+  static const _transferColor = Color(0xFF895918);
 
   static MapsProvider create() => Get.isRegistered<MapsProvider>()
       ? Get.find<MapsProvider>()
       : Get.put<MapsProvider>(MapsProvider());
 
-  final Rxn<GoogleMapController> mapController = Rxn<GoogleMapController>();
-
-  final Set<Marker> markers = <Marker>{};
-  final Set<Polyline> polylines = <Polyline>{};
-
+  final MapController mapController = MapController();
   final RxInt mapVersion = 0.obs;
-
-  final Rx<CameraPosition> initialCameraPosition = Rx<CameraPosition>(
-    const CameraPosition(
-      target: LatLng(-25.790897377907932, 28.319562183317874),
-      zoom: 14.0,
-    ),
-  );
+  final Rx<LatLng> initialCenter = const LatLng(
+    -25.7908973779,
+    28.3195621833,
+  ).obs;
+  final RxDouble initialZoom = 14.0.obs;
+  final List<HambaMapMarker> markers = [];
+  final List<HambaMapPath> paths = [];
 
   Future<void> updateMarkers() async {
-    final ActionsProvider actionsProvider = ActionsProvider.create();
-    final TaxiRoutesProvider taxiRoutesProvider = TaxiRoutesProvider.create();
-    Set<Marker> newMarkers;
-    Set<Polyline> newPolylines;
-
-    switch (actionsProvider.selectedAction.value) {
+    final actions = ActionsProvider.create();
+    final routes = TaxiRoutesProvider.create();
+    markers.clear();
+    paths.clear();
+    switch (actions.selectedAction.value) {
       case ActionType.viewRoute:
-        try {
-          final route = actionsProvider.selectedRoute.value;
-
-          if (route == null) {
-            newMarkers = <Marker>{};
-            newPolylines = <Polyline>{};
-            break;
-          }
-
-          final originMarker = Marker(
-            markerId: MarkerId('route_${route.model.id}_origin'),
-            position: route.originPoint,
-          );
-
-          final destinationMarker = Marker(
-            markerId: MarkerId('route_${route.model.id}_destination'),
-            position: route.destinationPoint,
-          );
-
-          newMarkers = {originMarker, destinationMarker};
-
-          newPolylines = {
-            for (
-              var partIndex = 0;
-              partIndex < route.model.geometry.parts.length;
-              partIndex++
-            )
-              Polyline(
-                polylineId: PolylineId('route_${route.model.id}_$partIndex'),
-                points: route.model.geometry.parts[partIndex]
-                    .map((coord) => LatLng(coord[1], coord[0]))
-                    .toList(),
-                color: Colors.blue,
-                width: 5,
-              ),
-          };
-          break;
-        } catch (e) {
-          newMarkers = <Marker>{};
-          newPolylines = <Polyline>{};
-        }
-
-      case ActionType.planningJourney:
-        final destination = actionsProvider.selectedDestination.value;
-        newMarkers = destination == null
-            ? <Marker>{}
-            : {
-                Marker(
-                  markerId: const MarkerId('journey_destination'),
-                  position: destination.position,
-                  infoWindow: InfoWindow(title: destination.label),
+        final route = actions.selectedRoute.value;
+        if (route != null) {
+          markers.addAll([
+            HambaMapMarker(
+              position: route.originPoint,
+              label: 'Route start: ${route.originName}',
+              color: _taxiColor,
+              icon: Icons.directions_bus_rounded,
+            ),
+            HambaMapMarker(
+              position: route.destinationPoint,
+              label: 'Route end: ${route.destinationName}',
+              icon: Icons.flag_rounded,
+            ),
+          ]);
+          paths.addAll([
+            for (final part in route.model.geometry.parts)
+              if (part.length > 1)
+                HambaMapPath(
+                  points: part.map((c) => LatLng(c[1], c[0])).toList(),
+                  color: _taxiColor,
+                  width: 6.5,
                 ),
-              };
-        newPolylines = <Polyline>{};
-
+          ]);
+          _fitPoints(
+            route.model.geometry.coordinates
+                .map((c) => LatLng(c[1], c[0]))
+                .toList(),
+          );
+        }
+        break;
+      case ActionType.planningJourney:
+        final destination = actions.selectedDestination.value;
+        if (destination != null) {
+          markers.add(
+            HambaMapMarker(
+              position: destination.position,
+              label: 'Destination: ${destination.label}',
+              icon: Icons.flag_rounded,
+            ),
+          );
+        }
+        break;
       case ActionType.journeyReady:
       case ActionType.journeyStarted:
       case ActionType.journeyCompleted:
-        final journey = actionsProvider.journey.value;
-        if (journey == null) {
-          newMarkers = <Marker>{};
-          newPolylines = <Polyline>{};
-          break;
-        }
-        newMarkers = {
-          for (
-            var legIndex = 0;
-            legIndex < journey.taxiLegs.length;
-            legIndex++
-          ) ...{
-            Marker(
-              markerId: MarkerId('journey_boarding_$legIndex'),
-              position: journey.taxiLegs[legIndex].boardingPoint,
-              infoWindow: InfoWindow(
-                title: legIndex == 0 ? 'Board taxi' : 'Board connecting taxi',
+        final journey = actions.journey.value;
+        if (journey != null) {
+          markers.addAll([
+            for (var i = 0; i < journey.taxiLegs.length; i++) ...[
+              HambaMapMarker(
+                position: journey.taxiLegs[i].boardingPoint,
+                label: i == 0 ? 'Board taxi' : 'Board connecting taxi',
+                color: _taxiColor,
+                icon: Icons.directions_bus_rounded,
               ),
-            ),
-            Marker(
-              markerId: MarkerId('journey_exit_$legIndex'),
-              position: journey.taxiLegs[legIndex].exitPoint,
-              infoWindow: InfoWindow(
-                title: legIndex == journey.taxiLegs.length - 1
+              HambaMapMarker(
+                position: journey.taxiLegs[i].exitPoint,
+                label: i == journey.taxiLegs.length - 1
                     ? 'Leave taxi'
                     : 'Transfer taxis',
+                color: _transferColor,
+                icon: i == journey.taxiLegs.length - 1
+                    ? Icons.directions_walk_rounded
+                    : Icons.swap_horiz_rounded,
+                compact: true,
               ),
+            ],
+            HambaMapMarker(
+              position: journey.destination.position,
+              label: 'Destination: ${journey.destination.label}',
+              icon: Icons.flag_rounded,
             ),
-          },
-          Marker(
-            markerId: const MarkerId('journey_destination'),
-            position: journey.destination.position,
-            infoWindow: InfoWindow(title: journey.destination.label),
-          ),
-        };
-        newPolylines = {
-          for (var stepIndex = 0; stepIndex < journey.steps.length; stepIndex++)
-            Polyline(
-              polylineId: PolylineId('journey_step_$stepIndex'),
-              points: journey.steps[stepIndex].path,
-              color: _journeyStepColor(
-                step: journey.steps[stepIndex],
-                stepIndex: stepIndex,
-                actionsProvider: actionsProvider,
+          ]);
+          paths.addAll([
+            for (var i = 0; i < journey.steps.length; i++)
+              HambaMapPath(
+                points: journey.steps[i].path,
+                color: _stepColor(journey.steps[i], i, actions),
+                width: _stepWidth(journey.steps[i], i, actions),
+                dashed: journey.steps[i].type != JourneyStepType.taxi,
               ),
-              width:
-                  actionsProvider.selectedAction.value ==
-                          ActionType.journeyStarted &&
-                      actionsProvider.activeJourneyStepIndex.value == stepIndex
-                  ? 8
-                  : 6,
-              patterns: journey.steps[stepIndex].type == JourneyStepType.taxi
-                  ? const []
-                  : journey.steps[stepIndex].hasMappedWalkingRoute
-                  ? [PatternItem.dot, PatternItem.gap(8)]
-                  : [PatternItem.dash(18), PatternItem.gap(10)],
-            ),
-        };
+          ]);
+          _fitJourney(journey);
+        }
         break;
-
       default:
-        newMarkers = {
-          for (final route in taxiRoutesProvider.nearbyRoutes)
-            Marker(
-              markerId: MarkerId('nearby_${route.model.id}'),
+        markers.addAll([
+          for (final route in routes.nearbyRoutes)
+            HambaMapMarker(
               position: route.originPoint,
-              onTap: () async {
-                actionsProvider.setSelectedRoute(route);
-                actionsProvider.viewRoute(route);
+              label: '${route.originName} to ${route.destinationName}',
+              color: Colours.primaryOne,
+              icon: Icons.directions_bus_rounded,
+              compact: true,
+              onTap: () {
+                actions.setSelectedRoute(route);
+                actions.viewRoute(route);
               },
             ),
-        };
-
-        newPolylines = {};
+        ]);
+        break;
     }
-
-    markers
-      ..clear()
-      ..addAll(newMarkers);
-    polylines
-      ..clear()
-      ..addAll(newPolylines);
-
-    // Explicitly tell GetX to rebuild the GoogleMap.
     mapVersion.value++;
+  }
 
-    // Wait for the GoogleMap widget to be rebuilt.
-    final selectedAction = actionsProvider.selectedAction.value;
-    if (selectedAction == ActionType.viewRoute) {
-      final route = actionsProvider.selectedRoute.value;
-      if (route != null) {
-        Future<void>.delayed(
-          const Duration(milliseconds: 100),
-          () => _fitPoints(
-            route.model.geometry.coordinates
-                .map((coordinate) => LatLng(coordinate[1], coordinate[0]))
-                .toList(),
-          ),
-        );
-      }
-    } else if (selectedAction == ActionType.journeyReady ||
-        selectedAction == ActionType.journeyStarted ||
-        selectedAction == ActionType.journeyCompleted) {
-      final journey = actionsProvider.journey.value;
-      if (journey != null) {
-        Future<void>.delayed(
-          const Duration(milliseconds: 100),
-          () => _fitJourney(journey),
-        );
-      }
+  Color _stepColor(JourneyStep step, int index, ActionsProvider actions) {
+    if (actions.selectedAction.value == ActionType.journeyCompleted ||
+        (actions.selectedAction.value == ActionType.journeyStarted &&
+            index < actions.activeJourneyStepIndex.value)) {
+      return const Color(0xFF7B8687);
     }
+    if (actions.selectedAction.value == ActionType.journeyStarted &&
+        index == actions.activeJourneyStepIndex.value) {
+      return step.type == JourneyStepType.taxi
+          ? const Color(0xFF004E48)
+          : Colours.blue;
+    }
+    return step.type == JourneyStepType.taxi
+        ? _taxiColor
+        : step.hasMappedWalkingRoute
+        ? Colours.blue
+        : _walkEstimateColor;
+  }
+
+  double _stepWidth(JourneyStep step, int index, ActionsProvider actions) {
+    final width = step.type == JourneyStepType.taxi ? 6.5 : 4.5;
+    final active =
+        actions.selectedAction.value == ActionType.journeyStarted &&
+        index == actions.activeJourneyStepIndex.value;
+    return active ? width + 1.5 : width;
   }
 
   void _fitJourney(TaxiJourney journey) {
-    final currentPosition = UserLocationProvider.create().userLocation.value;
+    final user = UserLocationProvider.create().userLocation.value;
     _fitPoints([
-      if (currentPosition != null)
-        LatLng(currentPosition.latitude, currentPosition.longitude),
+      if (user != null) LatLng(user.latitude, user.longitude),
       for (final step in journey.steps) ...step.path,
       journey.destination.position,
     ]);
   }
 
-  Color _journeyStepColor({
-    required JourneyStep step,
-    required int stepIndex,
-    required ActionsProvider actionsProvider,
-  }) {
-    if (actionsProvider.selectedAction.value == ActionType.journeyStarted) {
-      if (stepIndex < actionsProvider.activeJourneyStepIndex.value) {
-        return Colors.grey;
-      }
-      if (stepIndex == actionsProvider.activeJourneyStepIndex.value) {
-        return Colors.green;
-      }
-    }
-    if (actionsProvider.selectedAction.value == ActionType.journeyCompleted) {
-      return Colors.grey;
-    }
-    return step.type == JourneyStepType.taxi
-        ? Colors.amber
-        : step.hasMappedWalkingRoute
-        ? Colors.blue
-        : Colors.blueGrey;
-  }
-
   void _fitPoints(List<LatLng> points) {
-    final controller = mapController.value;
-
-    if (controller == null || points.isEmpty) {
+    if (points.isEmpty) {
       return;
     }
-
-    var minLatitude = points.first.latitude;
-    var maxLatitude = points.first.latitude;
-    var minLongitude = points.first.longitude;
-    var maxLongitude = points.first.longitude;
-    for (final point in points.skip(1)) {
-      minLatitude = point.latitude < minLatitude ? point.latitude : minLatitude;
-      maxLatitude = point.latitude > maxLatitude ? point.latitude : maxLatitude;
-      minLongitude = point.longitude < minLongitude
-          ? point.longitude
-          : minLongitude;
-      maxLongitude = point.longitude > maxLongitude
-          ? point.longitude
-          : maxLongitude;
-    }
-
-    if (minLatitude == maxLatitude && minLongitude == maxLongitude) {
-      controller.animateCamera(CameraUpdate.newLatLngZoom(points.first, 15));
+    if (points.length == 1) {
+      mapController.move(points.first, 15);
       return;
     }
-
-    controller.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: LatLng(minLatitude, minLongitude),
-          northeast: LatLng(maxLatitude, maxLongitude),
-        ),
-        100.0,
+    final height = mapController.camera.nonRotatedSize.height;
+    mapController.fitCamera(
+      CameraFit.coordinates(
+        coordinates: points,
+        maxZoom: 17,
+        padding: EdgeInsets.fromLTRB(48, height * .17, 48, height * .19),
       ),
     );
   }
 
   Future<void> moveToMyLocation() async {
-    final UserLocationProvider userLocationProvider =
-        UserLocationProvider.create();
-    final controller = mapController.value;
-
+    final location = UserLocationProvider.create();
     final position =
-        userLocationProvider.userLocation.value ??
-        await userLocationProvider.refreshLocation(requestPermission: true);
-    if (controller == null || position == null) {
-      return;
+        location.userLocation.value ??
+        await location.refreshLocation(requestPermission: true);
+    if (position != null) {
+      mapController.move(LatLng(position.latitude, position.longitude), 15);
     }
-    controller.animateCamera(
-      CameraUpdate.newLatLngZoom(
-        LatLng(position.latitude, position.longitude),
-        14.0,
-      ),
-    );
   }
 }

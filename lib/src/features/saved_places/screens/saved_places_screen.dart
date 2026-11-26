@@ -10,7 +10,6 @@ import 'package:TaxiApp/src/core/widgets/app_bars/custom_app_bar.dart';
 import 'package:TaxiApp/src/features/my_profile/screens/driver_location_picker_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class SavedPlacesScreen extends StatelessWidget {
   SavedPlacesScreen({super.key});
@@ -304,7 +303,7 @@ class _SavedPlaceEditorScreenState extends State<SavedPlaceEditorScreen> {
     final result = await Get.to<DriverRouteLocation>(
       () => DriverLocationPickerScreen(
         title: 'Choose saved place',
-        markerHue: BitmapDescriptor.hueAzure,
+        markerColor: Colours.blueThree,
         initialLocation: current == null
             ? null
             : DriverRouteLocation(

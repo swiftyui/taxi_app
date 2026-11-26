@@ -12,11 +12,10 @@ import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_prov
 import 'package:TaxiApp/src/core/providers/travel_log_provider/travel_log_provider.dart';
 import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:TaxiApp/src/core/services/journey_progress_service.dart';
-import 'package:TaxiApp/src/core/services/google_walking_directions_service.dart';
 import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 class ActionsProvider extends GetxController with RxWorkerMixin {
   static ActionsProvider create() => Get.isRegistered<ActionsProvider>()
@@ -118,9 +117,7 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
         return;
       }
 
-      journey.value = await GoogleWalkingDirectionsService().enrichJourney(
-        plannedJourney,
-      );
+      journey.value = plannedJourney;
       selectedAction.value = ActionType.journeyReady;
     } catch (_) {
       journeyError.value = 'Unable to plan this journey. Please try again.';
@@ -176,9 +173,7 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
         return;
       }
 
-      journey.value = await GoogleWalkingDirectionsService().enrichJourney(
-        plannedJourney,
-      );
+      journey.value = plannedJourney;
       selectedAction.value = ActionType.journeyReady;
       startJourney();
     } catch (_) {

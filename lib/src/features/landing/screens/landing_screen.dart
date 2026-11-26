@@ -1,12 +1,13 @@
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
 import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
+import 'package:TaxiApp/src/core/widgets/hamba_map.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_bottom_sheet.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_search_bar.dart';
 import 'package:TaxiApp/src/features/landing/widgets/my_location_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -19,54 +20,81 @@ class _LandingScreenState extends State<LandingScreen> {
   final MapsProvider _mapsProvider = MapsProvider.create();
   final UserLocationProvider _userLocationProvider =
       UserLocationProvider.create();
+  late final Worker _locationWorker;
+  bool _mapReady = false;
+  bool _centeredOnInitialLocation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _locationWorker = ever(
+      _userLocationProvider.userLocation,
+      (_) => _centerOnInitialLocation(),
+    );
+  }
+
+  void _centerOnInitialLocation() {
+    if (!_mapReady ||
+        _centeredOnInitialLocation ||
+        _userLocationProvider.userLocation.value == null) {
+      return;
+    }
+    _centeredOnInitialLocation = true;
+    _mapsProvider.moveToMyLocation();
+  }
+
+  @override
+  void dispose() {
+    _locationWorker.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Obx(() {
     _mapsProvider.mapVersion.value;
-    final hasLocation = _userLocationProvider.userLocation.value != null;
+    final location = _userLocationProvider.userLocation.value;
     return Scaffold(
       body: Stack(
         alignment: Alignment.center,
         children: [
-          GoogleMap(
-            mapTypeControlEnabled: true,
-            initialCameraPosition: _mapsProvider.initialCameraPosition.value,
-            compassEnabled: true,
+          HambaMap(
+            controller: _mapsProvider.mapController,
+            center: _mapsProvider.initialCenter.value,
+            zoom: _mapsProvider.initialZoom.value,
             markers: _mapsProvider.markers,
-            myLocationButtonEnabled: false,
-            myLocationEnabled: hasLocation,
-            trafficEnabled: true,
-            buildingsEnabled: true,
-            indoorViewEnabled: true,
-            polylines: _mapsProvider.polylines,
-            onMapCreated: (GoogleMapController controller) {
-              _mapsProvider.mapController.value = controller;
-              if (hasLocation) {
-                _mapsProvider.moveToMyLocation();
-              }
+            paths: _mapsProvider.paths,
+            showAttribution: false,
+            userLocation: location == null
+                ? null
+                : LatLng(location.latitude, location.longitude),
+            onReady: () {
+              _mapReady = true;
+              _centerOnInitialLocation();
             },
-            zoomControlsEnabled: false,
           ),
+          LandingBottomSheet(),
           Align(
             alignment: Alignment.topCenter,
             child: SafeArea(
-              child:
-                  Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Expanded(child: LandingSearchBar()),
-                      MyLocationButton().paddingOnly(left: Dimensions.eight),
-                    ],
-                  ).paddingOnly(
-                    left: Dimensions.sixteen,
-                    right: Dimensions.sixteen,
-                    top: Dimensions.sixteen,
-                  ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(child: LandingSearchBar()),
+                        MyLocationButton().paddingOnly(left: Dimensions.eight),
+                      ],
+                    ),
+                    const SizedBox(height: Dimensions.eight),
+                    const OsmAttribution(),
+                  ],
+                ),
+              ),
             ),
           ),
-          LandingBottomSheet(),
         ],
       ),
     );

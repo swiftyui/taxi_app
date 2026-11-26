@@ -7,7 +7,7 @@ import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/taxi_rout
 import 'package:TaxiApp/src/core/services/journey_progress_service.dart';
 import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 void main() {
   group('TaxiRouteGeometry', () {

@@ -12,7 +12,7 @@ import 'package:TaxiApp/src/features/my_profile/screens/driver_location_picker_s
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 class DriverAccountScreen extends StatefulWidget {
   const DriverAccountScreen({super.key});
@@ -1120,9 +1120,7 @@ class _CreateDriverRouteSheetState extends State<_CreateDriverRouteSheet> {
         fullscreenDialog: true,
         builder: (_) => DriverLocationPickerScreen(
           title: isOrigin ? 'Choose route origin' : 'Choose destination',
-          markerHue: isOrigin
-              ? BitmapDescriptor.hueGreen
-              : BitmapDescriptor.hueRed,
+          markerColor: isOrigin ? Colours.green : Colours.red,
           initialLocation: initialLocation,
         ),
       ),

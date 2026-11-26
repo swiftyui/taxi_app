@@ -12,7 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 class TaxiRoutesProvider extends GetxController {
   TaxiRoutesProvider(
@@ -51,9 +51,9 @@ class TaxiRoutesProvider extends GetxController {
       position,
     ) {
       if (position != null) {
-        _mapsProvider.initialCameraPosition.value = CameraPosition(
-          target: LatLng(position.latitude, position.longitude),
-          zoom: 14,
+        _mapsProvider.initialCenter.value = LatLng(
+          position.latitude,
+          position.longitude,
         );
         if (taxiRoutes.isNotEmpty) {
           _updateNearbyRoutes(position);
@@ -118,9 +118,9 @@ class TaxiRoutesProvider extends GetxController {
 
       final userLocation = _userLocationProvider.userLocation.value;
       if (userLocation != null) {
-        _mapsProvider.initialCameraPosition.value = CameraPosition(
-          target: LatLng(userLocation.latitude, userLocation.longitude),
-          zoom: 14,
+        _mapsProvider.initialCenter.value = LatLng(
+          userLocation.latitude,
+          userLocation.longitude,
         );
         _lastNearbyLocation = userLocation;
         _findNearbyRoutes(userLocation);

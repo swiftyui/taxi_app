@@ -4,6 +4,7 @@ import 'package:TaxiApp/src/core/extensions/typed_extensions.dart';
 import 'package:TaxiApp/src/core/models/destination_search_result.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
 import 'package:TaxiApp/src/core/routes/routes.dart';
+import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/features/my_profile/widgets/profile_image.dart';
 import 'package:flutter/material.dart';
@@ -28,12 +29,12 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
     height: _searchBarHeight,
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(99),
+      borderRadius: BorderRadius.circular(16),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.5),
-          blurRadius: 2,
-          offset: const Offset(0, 2),
+          color: Colours.primaryOne.withValues(alpha: .18),
+          blurRadius: 12,
+          offset: const Offset(0, 3),
         ),
       ],
     ),
@@ -44,8 +45,8 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
         children: [
           SvgPicture.asset(
             ImageList.locationIcon,
-            width: 36,
-            height: 36,
+            width: 29,
+            height: 29,
           ).paddingOnly(right: Dimensions.eight),
           Expanded(
             child: _textToDisplay.onTap(() async {
@@ -55,7 +56,7 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
               }
             }),
           ),
-          const ProfileImage()
+          const ProfileImage(size: 34)
               .onTap(() async {
                 await Get.toNamed(AppRoutes.myProfile.value);
               })
@@ -96,7 +97,11 @@ class _LandingSearchBarState extends State<LandingSearchBar> {
     if (_actionsProvider.selectedRoute.value == null) {
       return Text(
         Get.appLocalizations.whereDoYouWantToGo,
-        style: Get.textTheme.bodyMedium?.copyWith(color: Colors.black),
+        style: Get.textTheme.bodyMedium?.copyWith(
+          color: Colours.primaryOne,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );

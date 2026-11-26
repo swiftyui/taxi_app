@@ -1,7 +1,7 @@
 import 'package:TaxiApp/src/core/models/destination_search_result.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/taxi_route_model.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:TaxiApp/src/core/services/osm_geocoding_service.dart';
+import 'package:latlong2/latlong.dart';
 
 class DestinationSearchException implements Exception {
   const DestinationSearchException(this.message);
@@ -13,10 +13,10 @@ class DestinationSearchException implements Exception {
 }
 
 class DestinationSearchService {
-  DestinationSearchService({Geocoding? geocoding})
-    : _geocoding = geocoding ?? Geocoding();
+  DestinationSearchService({OsmGeocodingService? geocoding})
+    : _geocoding = geocoding ?? OsmGeocodingService();
 
-  final Geocoding _geocoding;
+  final OsmGeocodingService _geocoding;
 
   Future<List<DestinationSearchResult>> search({
     required String query,
@@ -30,24 +30,15 @@ class DestinationSearchService {
     final localResults = _taxiRouteDestinations(normalizedQuery, taxiRoutes);
 
     try {
-      final locations = await _geocoding.locationFromAddress(
-        '$normalizedQuery, South Africa',
-      );
+      final locations = await _geocoding.search(normalizedQuery);
       final geocodedResults = <DestinationSearchResult>[];
 
-      for (final location in locations.take(5)) {
-        final placemarks = await _geocoding.placemarkFromCoordinates(
-          location.latitude,
-          location.longitude,
-        );
-        final placemark = placemarks.isEmpty ? null : placemarks.first;
-        final label = _placeLabel(placemark, normalizedQuery);
-        final subtitle = _placeSubtitle(placemark);
+      for (final location in locations) {
         geocodedResults.add(
           DestinationSearchResult(
-            label: label,
-            subtitle: subtitle,
-            position: LatLng(location.latitude, location.longitude),
+            label: location.label,
+            subtitle: location.subtitle,
+            position: location.position,
           ),
         );
       }
@@ -106,28 +97,4 @@ class DestinationSearchService {
       return seen.add(key);
     }).toList();
   }
-
-  String _placeLabel(Placemark? place, String fallback) {
-    if (place == null) {
-      return fallback;
-    }
-    return [place.name, place.street, place.locality]
-        .whereType<String>()
-        .map((value) => value.trim())
-        .firstWhere((value) => value.isNotEmpty, orElse: () => fallback);
-  }
-
-  String _placeSubtitle(Placemark? place) => place == null
-      ? ''
-      : [
-              place.street,
-              place.subLocality,
-              place.locality,
-              place.administrativeArea,
-            ]
-            .whereType<String>()
-            .map((value) => value.trim())
-            .where((value) => value.isNotEmpty)
-            .toSet()
-            .join(', ');
 }

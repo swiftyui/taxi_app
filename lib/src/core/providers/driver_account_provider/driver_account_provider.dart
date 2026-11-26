@@ -2,20 +2,20 @@ import 'dart:async';
 
 import 'package:TaxiApp/src/core/models/driver_profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:TaxiApp/src/core/services/osm_geocoding_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 class DriverAccountProvider extends GetxController {
   DriverAccountProvider({
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
-    Geocoding? geocoding,
+    OsmGeocodingService? geocoding,
   }) : _auth = auth ?? FirebaseAuth.instance,
        _firestore = firestore ?? FirebaseFirestore.instance,
-       _geocoding = geocoding ?? Geocoding();
+       _geocoding = geocoding ?? OsmGeocodingService();
 
   static DriverAccountProvider create() =>
       Get.isRegistered<DriverAccountProvider>()
@@ -24,7 +24,7 @@ class DriverAccountProvider extends GetxController {
 
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
-  final Geocoding _geocoding;
+  final OsmGeocodingService _geocoding;
 
   final Rxn<DriverProfile> profile = Rxn<DriverProfile>();
   final RxList<DriverRoute> routes = <DriverRoute>[].obs;
@@ -265,13 +265,11 @@ class DriverAccountProvider extends GetxController {
   }
 
   Future<LatLng?> _geocodeAddress(String address) async {
-    final locations = await _geocoding.locationFromAddress(
-      '${address.trim()}, South Africa',
-    );
+    final locations = await _geocoding.search(address.trim());
     if (locations.isEmpty) {
       return null;
     }
-    return LatLng(locations.first.latitude, locations.first.longitude);
+    return locations.first.position;
   }
 
   DocumentReference<Map<String, dynamic>> _profileDocument(String userId) =>

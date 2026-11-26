@@ -3,21 +3,23 @@ import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/app_bars/custom_app_bar.dart';
+import 'package:TaxiApp/src/core/widgets/hamba_map.dart';
+import 'package:TaxiApp/src/core/services/osm_geocoding_service.dart';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 class DriverLocationPickerScreen extends StatefulWidget {
   const DriverLocationPickerScreen({
     required this.title,
-    required this.markerHue,
+    required this.markerColor,
     this.initialLocation,
     super.key,
   });
 
   final String title;
-  final double markerHue;
+  final Color markerColor;
   final DriverRouteLocation? initialLocation;
 
   @override
@@ -28,13 +30,14 @@ class DriverLocationPickerScreen extends StatefulWidget {
 class _DriverLocationPickerScreenState
     extends State<DriverLocationPickerScreen> {
   static const _fallback = LatLng(-25.7479, 28.2293);
-  final Geocoding _geocoding = Geocoding();
+  final OsmGeocodingService _geocoding = OsmGeocodingService();
 
   late LatLng _selectedPosition;
   String _selectedLabel = 'Tap the map to choose a location';
   bool _isResolvingAddress = false;
+  int _selectionGeneration = 0;
   late bool _hasSelectedLocation;
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -58,31 +61,29 @@ class _DriverLocationPickerScreenState
     return Scaffold(
       appBar: HambaGoAppBar(
         title: widget.title,
-        subtitle: 'Tap the map or drag the pin',
+        subtitle: 'Tap the map to choose a location',
         leadingIcon: Icons.close_rounded,
       ),
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _selectedPosition,
-              zoom: 15,
-            ),
-            onMapCreated: (controller) => _mapController = controller,
+          HambaMap(
+            controller: _mapController,
+            center: _selectedPosition,
+            zoom: 15,
             onTap: _selectPosition,
-            myLocationEnabled: hasUserLocation,
-            myLocationButtonEnabled: false,
-            mapToolbarEnabled: false,
-            zoomControlsEnabled: false,
-            markers: {
-              Marker(
-                markerId: const MarkerId('driver_route_location'),
+            markers: [
+              HambaMapMarker(
                 position: _selectedPosition,
-                draggable: true,
-                icon: BitmapDescriptor.defaultMarkerWithHue(widget.markerHue),
-                onDragEnd: _selectPosition,
+                label: 'Selected location',
+                color: widget.markerColor,
               ),
-            },
+            ],
+            userLocation: hasUserLocation
+                ? LatLng(
+                    UserLocationProvider.create().userLocation.value!.latitude,
+                    UserLocationProvider.create().userLocation.value!.longitude,
+                  )
+                : null,
           ),
           SafeArea(
             child: Align(
@@ -108,7 +109,7 @@ class _DriverLocationPickerScreenState
                     SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        'Tap the map or drag the pin to set the location',
+                        'Tap the map to set the location',
                         style: TextStyle(color: Colors.white, fontSize: 12),
                       ),
                     ),
@@ -200,35 +201,27 @@ class _DriverLocationPickerScreenState
   }
 
   Future<void> _selectPosition(LatLng position) async {
+    final generation = ++_selectionGeneration;
     setState(() {
       _selectedPosition = position;
       _isResolvingAddress = true;
       _hasSelectedLocation = true;
     });
-    await _mapController?.animateCamera(CameraUpdate.newLatLng(position));
+    _mapController.move(position, _mapController.camera.zoom);
 
+    String? place;
     try {
-      final placemarks = await _geocoding.placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _selectedLabel = placemarks.isEmpty
-            ? _coordinateLabel(position)
-            : _placemarkLabel(placemarks.first, position);
-      });
+      place = await _geocoding.reverse(position);
     } catch (_) {
-      if (mounted) {
-        setState(() => _selectedLabel = _coordinateLabel(position));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isResolvingAddress = false);
-      }
+      // The selected coordinates can still be used if lookup fails.
     }
+    if (!mounted || generation != _selectionGeneration) {
+      return;
+    }
+    setState(() {
+      _selectedLabel = place ?? _coordinateLabel(position);
+      _isResolvingAddress = false;
+    });
   }
 
   Future<void> _moveToUser() async {
@@ -239,26 +232,13 @@ class _DriverLocationPickerScreenState
     await _selectPosition(LatLng(position.latitude, position.longitude));
   }
 
-  String _placemarkLabel(Placemark place, LatLng fallback) {
-    final components =
-        [place.name, place.street, place.subLocality, place.locality]
-            .whereType<String>()
-            .map((value) => value.trim())
-            .where((value) => value.isNotEmpty)
-            .toSet()
-            .toList(growable: false);
-    return components.isEmpty
-        ? _coordinateLabel(fallback)
-        : components.join(', ');
-  }
-
   String _coordinateLabel(LatLng position) =>
       '${position.latitude.toStringAsFixed(6)}, '
       '${position.longitude.toStringAsFixed(6)}';
 
   @override
   void dispose() {
-    _mapController?.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 }

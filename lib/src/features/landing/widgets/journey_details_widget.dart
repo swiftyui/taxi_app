@@ -111,7 +111,7 @@ class JourneyDetailsWidget extends StatelessWidget {
                   )
                   ? Icons.map_outlined
                   : Icons.info_outline,
-              message: _walkingRouteNotice(journey),
+              message: _walkingRouteNotice,
             ),
             _FareEstimateCard(
               journey: journey,
@@ -165,21 +165,7 @@ class JourneyDetailsWidget extends StatelessWidget {
     );
   });
 
-  String _walkingRouteNotice(TaxiJourney journey) {
-    final pedestrianSteps = journey.pedestrianSteps.toList(growable: false);
-    final mappedCount = pedestrianSteps
-        .where((step) => step.hasMappedWalkingRoute)
-        .length;
-    if (mappedCount == pedestrianSteps.length) {
-      return 'Walking paths, distances, and times use Google Maps '
-          'pedestrian directions.';
-    }
-    if (mappedCount > 0) {
-      return 'Google Maps pedestrian directions are shown where available. '
-          'Remaining walking links are straight-line estimates.';
-    }
-    return Get.appLocalizations.walkingEstimateNotice;
-  }
+  String get _walkingRouteNotice => Get.appLocalizations.walkingEstimateNotice;
 }
 
 class _JourneySafetyAction extends StatelessWidget {

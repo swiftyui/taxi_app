@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/models/destination_search_result.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
@@ -9,6 +7,7 @@ import 'package:TaxiApp/src/core/services/destination_search_service.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/core/widgets/app_bars/custom_app_bar.dart';
+import 'package:TaxiApp/src/core/widgets/hamba_map.dart';
 import 'package:TaxiApp/src/core/widgets/loaders/hambago_shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -27,39 +26,41 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
   final RxList<DestinationSearchResult> _results =
       <DestinationSearchResult>[].obs;
   final RxBool _isSearching = false.obs;
+  final RxBool _hasSubmittedSearch = false.obs;
   final RxnString _errorMessage = RxnString();
   final TextEditingController _searchController = TextEditingController();
 
-  Timer? _debounce;
   int _searchGeneration = 0;
 
   @override
   void dispose() {
-    _debounce?.cancel();
+    _searchGeneration++;
     _searchController.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged(String value) {
-    _debounce?.cancel();
-    if (value.trim().length < 3) {
-      _searchGeneration++;
-      _results.clear();
-      _errorMessage.value = null;
-      _isSearching.value = false;
-      return;
-    }
-    _debounce = Timer(const Duration(milliseconds: 500), () => _search(value));
+  void _onSearchChanged(String _) {
+    _searchGeneration++;
+    _results.clear();
+    _errorMessage.value = null;
+    _isSearching.value = false;
+    _hasSubmittedSearch.value = false;
   }
 
   Future<void> _search(String value) async {
+    final query = value.trim();
+    if (query.length < 3 || _isSearching.value) {
+      return;
+    }
+    FocusScope.of(context).unfocus();
     final generation = ++_searchGeneration;
     _isSearching.value = true;
+    _hasSubmittedSearch.value = true;
     _errorMessage.value = null;
 
     try {
       final results = await _searchService.search(
-        query: value,
+        query: query,
         taxiRoutes: _taxiRoutesProvider.taxiRoutes,
       );
       if (generation == _searchGeneration) {
@@ -84,11 +85,20 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
       title: 'Search routes',
       subtitle: 'Find a destination or taxi route',
     ),
+    bottomNavigationBar: const SafeArea(
+      top: false,
+      minimum: EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [OsmAttribution()],
+      ),
+    ),
     body: SafeArea(
       bottom: false,
       child: Column(
         children: [
           Container(
+            height: 52,
             decoration: BoxDecoration(
               color: Colours.searchBarBackground,
               borderRadius: BorderRadius.circular(99),
@@ -119,6 +129,7 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
                 ),
                 IconButton(
                   onPressed: () => _search(_searchController.text),
+                  tooltip: 'Search',
                   icon: const Icon(Icons.search, color: Colors.black),
                 ),
               ],
@@ -140,7 +151,7 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
                 );
               }
               if (_results.isEmpty) {
-                if (_searchController.text.trim().length < 3 &&
+                if (!_hasSubmittedSearch.value &&
                     _savedPlacesProvider.places.isNotEmpty) {
                   return _SavedPlaceSuggestions(
                     places: _savedPlacesProvider.places,
@@ -148,14 +159,14 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
                   );
                 }
                 return _SearchMessage(
-                  icon: _searchController.text.trim().length < 3
+                  icon: !_hasSubmittedSearch.value
                       ? Icons.travel_explore_rounded
                       : Icons.location_off_outlined,
-                  title: _searchController.text.trim().length < 3
+                  title: !_hasSubmittedSearch.value
                       ? 'Where are you heading?'
                       : 'No destinations found',
-                  message: _searchController.text.trim().length < 3
-                      ? Get.appLocalizations.searchAtLeastThreeCharacters
+                  message: !_hasSubmittedSearch.value
+                      ? 'Enter at least three characters, then tap Search.'
                       : Get.appLocalizations.noDestinationsFound,
                 );
               }
@@ -260,45 +271,48 @@ class _SearchResultCard extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: ListTile(
-              minTileHeight: 76,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-              leading: Container(
-                width: 38,
-                height: 38,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE6F1F5),
-                  shape: BoxShape.circle,
+            child: Material(
+              type: MaterialType.transparency,
+              child: ListTile(
+                minTileHeight: 76,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                leading: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE6F1F5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: Colours.blueThree, size: 21),
                 ),
-                child: Icon(icon, color: Colours.blueThree, size: 21),
-              ),
-              title: Text(
-                result.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colours.primaryOne,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                title: Text(
+                  result.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colours.primaryOne,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              subtitle: result.subtitle.isEmpty
-                  ? null
-                  : Text(
-                      result.subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colours.charcoalLight,
-                        fontSize: 11,
+                subtitle: result.subtitle.isEmpty
+                    ? null
+                    : Text(
+                        result.subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colours.charcoalLight,
+                          fontSize: 11,
+                        ),
                       ),
-                    ),
-              trailing: const Icon(
-                Icons.arrow_forward_rounded,
-                color: Colours.blueThree,
-                size: 18,
+                trailing: const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colours.blueThree,
+                  size: 18,
+                ),
+                onTap: onTap,
               ),
-              onTap: onTap,
             ),
           ),
         ],

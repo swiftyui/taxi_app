@@ -18,12 +18,14 @@ features against the production Firebase project:
 firebase deploy --only firestore:rules
 ```
 
-## Google walking directions
+## Maps and open map data
 
-Journey walking links use the Google Maps Routes API in `WALK` mode. Enable
-the **Routes API** and billing for the same Google Cloud project as the Maps
-SDK key configured by `googleMapsApiKey`. If Google cannot return a pedestrian
-route, HambaGo keeps the connector as an explicitly labelled estimate.
+HambaGo renders its own map interface with `flutter_map` and OpenStreetMap
+tiles. Map display, destination search, and reverse geocoding do not require a
+Google Maps SDK or API key. OpenStreetMap attribution is shown on map screens.
+The public OSM tile and Nominatim endpoints are community infrastructure with
+usage policies, rate limits, and no service guarantee; production scale may
+require self-hosted tiles/geocoding or another OSM-based provider.
 
 ## Journey safety
 
