@@ -176,5 +176,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get journeyComplete => 'You have reached your destination';
 
   @override
-  String get remaining => 'remaining';
+  String get walkToPickup => 'Walk to your pickup point';
+
+  @override
+  String get walkToDestination => 'Walk to your destination';
+
+  @override
+  String get remainingTime => 'Remaining time';
+
+  @override
+  String get remainingDistance => 'Remaining distance';
+
+  @override
+  String distanceToNextStop(String distance) {
+    return '$distance to next stop';
+  }
 }

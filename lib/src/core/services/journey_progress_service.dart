@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:TaxiApp/src/core/models/taxi_journey.dart';
 import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
 import 'package:latlong2/latlong.dart';
@@ -6,11 +8,15 @@ class JourneyProgress {
   const JourneyProgress({
     required this.stepIndex,
     required this.distanceToNextStepMeters,
+    required this.remainingDistanceMeters,
+    required this.remainingMinutes,
     required this.isComplete,
   });
 
   final int stepIndex;
   final double distanceToNextStepMeters;
+  final double remainingDistanceMeters;
+  final int remainingMinutes;
   final bool isComplete;
 }
 
@@ -38,45 +44,72 @@ class JourneyProgressService {
       return JourneyProgress(
         stepIndex: journey.steps.length,
         distanceToNextStepMeters: 0,
+        remainingDistanceMeters: 0,
+        remainingMinutes: 0,
         isComplete: true,
       );
     }
 
+    final step = journey.steps[stepIndex];
+    final distanceToNextStep = _remainingDistance(location, step);
+    var remainingDistance = distanceToNextStep;
+    var remainingMinutes = step.estimatedMinutesForDistance(distanceToNextStep);
+    for (final futureStep in journey.steps.skip(stepIndex + 1)) {
+      remainingDistance += futureStep.distanceMeters;
+      remainingMinutes += futureStep.estimatedMinutesForDistance(
+        futureStep.distanceMeters,
+      );
+    }
     return JourneyProgress(
       stepIndex: stepIndex,
-      distanceToNextStepMeters: _remainingDistance(
-        location,
-        journey.steps[stepIndex],
-      ),
+      distanceToNextStepMeters: distanceToNextStep,
+      remainingDistanceMeters: remainingDistance,
+      remainingMinutes: math.max(1, remainingMinutes.ceil()),
       isComplete: false,
     );
   }
 
   double _remainingDistance(LatLng location, JourneyStep step) {
-    if (step.path.length < 2 || step.type != JourneyStepType.taxi) {
+    if (step.path.length < 2 ||
+        (step.type != JourneyStepType.taxi && !step.hasMappedWalkingRoute)) {
       return TaxiRoutingService.distanceBetween(location, step.destination);
     }
 
-    var nearestIndex = 0;
+    // Use the closest point on a segment so progress changes between vertices.
+    final longitudeScale = math.cos(location.latitude * math.pi / 180);
     var nearestDistance = double.infinity;
-    for (var index = 0; index < step.path.length; index++) {
-      final distance = TaxiRoutingService.distanceBetween(
-        location,
-        step.path[index],
+    var remainingDistance = 0.0;
+    var distanceAfterSegment = 0.0;
+    for (var index = step.path.length - 1; index > 0; index--) {
+      final start = step.path[index - 1];
+      final end = step.path[index];
+      final dx = (end.longitude - start.longitude) * longitudeScale;
+      final dy = end.latitude - start.latitude;
+      final x = (location.longitude - start.longitude) * longitudeScale;
+      final y = location.latitude - start.latitude;
+      final squaredLength = dx * dx + dy * dy;
+      final fraction = squaredLength == 0
+          ? 0.0
+          : ((x * dx + y * dy) / squaredLength).clamp(0.0, 1.0);
+      final projected = LatLng(
+        start.latitude + fraction * (end.latitude - start.latitude),
+        start.longitude + fraction * (end.longitude - start.longitude),
       );
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestIndex = index;
+      final distanceFromPath = TaxiRoutingService.distanceBetween(
+        location,
+        projected,
+      );
+      final segmentLength = TaxiRoutingService.distanceBetween(start, end);
+      if (distanceFromPath <= nearestDistance) {
+        nearestDistance = distanceFromPath;
+        remainingDistance =
+            distanceFromPath +
+            (1 - fraction) * segmentLength +
+            distanceAfterSegment;
       }
+      distanceAfterSegment += segmentLength;
     }
 
-    var remainingDistance = nearestDistance;
-    for (var index = nearestIndex + 1; index < step.path.length; index++) {
-      remainingDistance += TaxiRoutingService.distanceBetween(
-        step.path[index - 1],
-        step.path[index],
-      );
-    }
     return remainingDistance;
   }
 }

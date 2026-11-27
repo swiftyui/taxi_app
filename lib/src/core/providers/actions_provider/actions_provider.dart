@@ -29,9 +29,8 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
   final RxList<TaxiJourney> journeyOptions = <TaxiJourney>[].obs;
   final RxBool isPlanningJourney = false.obs;
   final RxnString journeyError = RxnString();
-  final RxInt activeJourneyStepIndex = 0.obs;
-  final RxDouble distanceToNextStepMeters = 0.0.obs;
-  final RxBool isJourneyComplete = false.obs;
+  final Rxn<JourneyProgress> journeyProgress = Rxn<JourneyProgress>();
+  int get activeJourneyStepIndex => journeyProgress.value?.stepIndex ?? 0;
   Future<String>? _activeTravelLog;
   int _planRequest = 0;
 
@@ -243,8 +242,7 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
         selectedAction.value != ActionType.journeyReady) {
       return;
     }
-    activeJourneyStepIndex.value = 0;
-    isJourneyComplete.value = false;
+    journeyProgress.value = null;
     _activeTravelLog = TravelLogProvider.create().recordJourneyStart(
       activeJourney,
     );
@@ -275,9 +273,7 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
     journeyOptions.clear();
     journeyError.value = null;
     isPlanningJourney.value = false;
-    activeJourneyStepIndex.value = 0;
-    distanceToNextStepMeters.value = 0;
-    isJourneyComplete.value = false;
+    journeyProgress.value = null;
   }
 
   void _updateJourneyProgress(LatLng location) {
@@ -286,15 +282,13 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
       return;
     }
 
-    final previousStepIndex = activeJourneyStepIndex.value;
+    final previousStepIndex = activeJourneyStepIndex;
     final progress = const JourneyProgressService().update(
       journey: activeJourney,
       currentStepIndex: previousStepIndex,
       location: location,
     );
-    activeJourneyStepIndex.value = progress.stepIndex;
-    distanceToNextStepMeters.value = progress.distanceToNextStepMeters;
-    isJourneyComplete.value = progress.isComplete;
+    journeyProgress.value = progress;
     _syncRouteOccupancy(
       activeJourney,
       progress.stepIndex,

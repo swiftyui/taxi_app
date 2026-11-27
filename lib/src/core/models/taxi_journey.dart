@@ -25,6 +25,19 @@ class JourneyStep {
 
   LatLng get destination => path.last;
 
+  double estimatedMinutesForDistance(double meters) {
+    if (duration != null && distanceMeters > 0) {
+      return duration!.inSeconds / 60 * (meters / distanceMeters);
+    }
+    // Typical speeds for estimates without traffic or wait data.
+    const walkingMetersPerMinute = 80.0;
+    const taxiMetersPerMinute = 25000 / 60;
+    return meters /
+        (type == JourneyStepType.taxi
+            ? taxiMetersPerMinute
+            : walkingMetersPerMinute);
+  }
+
   JourneyStep withWalkingRoute({
     required List<LatLng> path,
     required double distanceMeters,
@@ -77,19 +90,11 @@ class TaxiJourney {
       steps.fold(0, (total, step) => total + step.distanceMeters);
 
   int get estimatedTravelMinutes {
-    // Typical speeds for a distance estimate without traffic or wait data.
-    const walkingMetersPerMinute = 80.0;
-    const taxiMetersPerMinute = 25000 / 60;
-    final minutes = steps.fold<double>(0, (total, step) {
-      final duration = step.duration;
-      if (duration != null) {
-        return total + duration.inSeconds / 60;
-      }
-      final speed = step.type == JourneyStepType.taxi
-          ? taxiMetersPerMinute
-          : walkingMetersPerMinute;
-      return total + step.distanceMeters / speed;
-    });
+    final minutes = steps.fold<double>(
+      0,
+      (total, step) =>
+          total + step.estimatedMinutesForDistance(step.distanceMeters),
+    );
     return minutes <= 1 ? 1 : minutes.ceil();
   }
 

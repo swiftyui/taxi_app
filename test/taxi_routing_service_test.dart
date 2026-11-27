@@ -369,6 +369,77 @@ void main() {
       expect(boarded.isComplete, isFalse);
       expect(arrived.isComplete, isTrue);
       expect(arrived.stepIndex, journey.steps.length);
+      expect(arrived.remainingDistanceMeters, 0);
+      expect(arrived.remainingMinutes, 0);
+    });
+
+    test('counts the remaining part of a taxi leg and the full next leg', () {
+      const origin = LatLng(0, 0);
+      const corner = LatLng(0, 0.01);
+      const dropOff = LatLng(0.01, 0.01);
+      const end = LatLng(0.014, 0.01);
+      const beforeCorner = LatLng(0, 0.004);
+      final taxiMeters =
+          TaxiRoutingService.distanceBetween(origin, corner) +
+          TaxiRoutingService.distanceBetween(corner, dropOff);
+      final walkMeters = TaxiRoutingService.distanceBetween(dropOff, end);
+      final journey = TaxiJourney(
+        origin: origin,
+        destination: const DestinationSearchResult(
+          label: 'Destination',
+          subtitle: '',
+          position: end,
+        ),
+        taxiLegs: [],
+        steps: [
+          JourneyStep(
+            type: JourneyStepType.taxi,
+            instruction: 'Take a taxi',
+            detail: '',
+            distanceMeters: taxiMeters,
+            path: const [origin, corner, dropOff],
+          ),
+          JourneyStep(
+            type: JourneyStepType.walk,
+            instruction: 'Walk to the destination',
+            detail: '',
+            distanceMeters: walkMeters,
+            path: const [dropOff, end],
+            duration: const Duration(minutes: 8),
+            hasMappedWalkingRoute: true,
+          ),
+        ],
+      );
+      const service = JourneyProgressService();
+      final progress = service.update(
+        journey: journey,
+        currentStepIndex: 0,
+        location: beforeCorner,
+      );
+
+      expect(progress.distanceToNextStepMeters, closeTo(taxiMeters * .8, 1));
+      expect(
+        progress.remainingDistanceMeters,
+        closeTo(taxiMeters * .8 + walkMeters, 1),
+      );
+      expect(progress.remainingMinutes, 13);
+      // Advance into the walking leg at the drop-off before measuring its ETA.
+      final atDropOff = service.update(
+        journey: journey,
+        currentStepIndex: progress.stepIndex,
+        location: dropOff,
+      );
+      final halfwayWalking = service.update(
+        journey: journey,
+        currentStepIndex: atDropOff.stepIndex,
+        location: const LatLng(0.0121, 0.01),
+      );
+      expect(halfwayWalking.stepIndex, 1);
+      expect(
+        halfwayWalking.remainingDistanceMeters,
+        closeTo(walkMeters * .475, 1),
+      );
+      expect(halfwayWalking.remainingMinutes, 4);
     });
   });
 }

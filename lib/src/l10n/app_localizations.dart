@@ -406,11 +406,35 @@ abstract class AppLocalizations {
   /// **'You have reached your destination'**
   String get journeyComplete;
 
-  /// Distance remaining suffix
+  /// No description provided for @walkToPickup.
   ///
   /// In en, this message translates to:
-  /// **'remaining'**
-  String get remaining;
+  /// **'Walk to your pickup point'**
+  String get walkToPickup;
+
+  /// No description provided for @walkToDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Walk to your destination'**
+  String get walkToDestination;
+
+  /// No description provided for @remainingTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining time'**
+  String get remainingTime;
+
+  /// No description provided for @remainingDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining distance'**
+  String get remainingDistance;
+
+  /// Distance to the end of the current journey step
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} to next stop'**
+  String distanceToNextStop(String distance);
 }
 
 class _AppLocalizationsDelegate

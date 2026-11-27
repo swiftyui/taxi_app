@@ -208,8 +208,17 @@
     "@journeyComplete": {
         "description": "Completed journey label"
     },
-    "remaining": "remaining",
-    "@remaining": {
-        "description": "Distance remaining suffix"
+    "walkToPickup": "Walk to your pickup point",
+    "walkToDestination": "Walk to your destination",
+    "remainingTime": "Remaining time",
+    "remainingDistance": "Remaining distance",
+    "distanceToNextStop": "{distance} to next stop",
+    "@distanceToNextStop": {
+        "description": "Distance to the end of the current journey step",
+        "placeholders": {
+            "distance": {
+                "type": "String"
+            }
+        }
     }
 }

@@ -5,6 +5,7 @@ import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/models/taxi_journey.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
 import 'package:TaxiApp/src/core/routes/routes.dart';
+import 'package:TaxiApp/src/core/services/journey_progress_service.dart';
 import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
@@ -23,8 +24,13 @@ class JourneyDetailsWidget extends StatelessWidget {
     final destination = _actionsProvider.selectedDestination.value;
     final journey = _actionsProvider.journey.value;
     final error = _actionsProvider.journeyError.value;
-    final previewing =
-        _actionsProvider.selectedAction.value == ActionType.journeyReady;
+    final action = _actionsProvider.selectedAction.value;
+    final previewing = action == ActionType.journeyReady;
+    final guiding = action == ActionType.journeyStarted;
+    final completed = action == ActionType.journeyCompleted;
+    final activeStepIndex = guiding
+        ? _actionsProvider.activeJourneyStepIndex
+        : 0;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -36,7 +42,7 @@ class JourneyDetailsWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!previewing)
+          if (!previewing && !guiding && !completed)
             Row(
               children: [
                 Expanded(
@@ -78,17 +84,6 @@ class JourneyDetailsWidget extends StatelessWidget {
                 options: _actionsProvider.journeyOptions,
                 onSelect: _actionsProvider.selectJourneyOption,
               ),
-            if (_actionsProvider.selectedAction.value ==
-                    ActionType.journeyStarted ||
-                _actionsProvider.selectedAction.value ==
-                    ActionType.journeyCompleted)
-              _LiveGuidanceCard(
-                journey: journey,
-                stepIndex: _actionsProvider.activeJourneyStepIndex.value,
-                distanceToNextStepMeters:
-                    _actionsProvider.distanceToNextStepMeters.value,
-                isComplete: _actionsProvider.isJourneyComplete.value,
-              ),
             if (!previewing)
               Text(
                 _journeyType(journey),
@@ -103,17 +98,9 @@ class JourneyDetailsWidget extends StatelessWidget {
             )
               _JourneyStepTile(
                 step: journey.steps[stepIndex],
-                isActive:
-                    _actionsProvider.selectedAction.value ==
-                        ActionType.journeyStarted &&
-                    _actionsProvider.activeJourneyStepIndex.value == stepIndex,
+                isActive: guiding && activeStepIndex == stepIndex,
                 isComplete:
-                    _actionsProvider.selectedAction.value ==
-                        ActionType.journeyCompleted ||
-                    (_actionsProvider.selectedAction.value ==
-                            ActionType.journeyStarted &&
-                        stepIndex <
-                            _actionsProvider.activeJourneyStepIndex.value),
+                    completed || (guiding && stepIndex < activeStepIndex),
               ),
             _JourneyNotice(
               icon:
@@ -587,13 +574,7 @@ class _JourneyStepTile extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: Icon(
-          isComplete
-              ? Icons.check
-              : step.type == JourneyStepType.taxi
-              ? Icons.local_taxi
-              : step.type == JourneyStepType.transfer
-              ? Icons.transfer_within_a_station
-              : Icons.directions_walk,
+          isComplete ? Icons.check : _journeyStepIcon(step.type),
           color: Colors.black,
         ),
       ).paddingOnly(right: Dimensions.eight),
@@ -621,53 +602,208 @@ class _JourneyStepTile extends StatelessWidget {
   ).paddingOnly(bottom: Dimensions.sixteen);
 }
 
-class _LiveGuidanceCard extends StatelessWidget {
-  const _LiveGuidanceCard({
+IconData _journeyStepIcon(JourneyStepType type) => switch (type) {
+  JourneyStepType.walk => Icons.directions_walk_rounded,
+  JourneyStepType.taxi => Icons.local_taxi_rounded,
+  JourneyStepType.transfer => Icons.transfer_within_a_station_rounded,
+};
+
+class JourneyGuidanceHeader extends StatelessWidget {
+  const JourneyGuidanceHeader({
     required this.journey,
-    required this.stepIndex,
-    required this.distanceToNextStepMeters,
-    required this.isComplete,
+    required this.progress,
+    required this.dragHandle,
+    required this.onClose,
+    super.key,
   });
 
   final TaxiJourney journey;
-  final int stepIndex;
-  final double distanceToNextStepMeters;
-  final bool isComplete;
+  final JourneyProgress? progress;
+  final Widget dragHandle;
+  final VoidCallback onClose;
+
+  static const double _handleHeight = 24;
+  static const double _gap = 12;
+  static const double _instructionSize = 18;
+  static const double _captionSize = 12;
+  static const double _metricSize = 22;
+
+  static double _instructionHeight(BuildContext context) {
+    final scale = MediaQuery.textScalerOf(context);
+    return math.max(
+      52,
+      scale.scale(_instructionSize) * 2.4 +
+          scale.scale(_captionSize) * 1.25 +
+          7,
+    );
+  }
+
+  static double _metricsHeight(BuildContext context) {
+    final scale = MediaQuery.textScalerOf(context);
+    return scale.scale(_metricSize) * 1.2 +
+        scale.scale(_captionSize) * 1.25 +
+        4;
+  }
+
+  static double heightFor(BuildContext context) =>
+      _handleHeight +
+      _instructionHeight(context) +
+      _gap +
+      _metricsHeight(context) +
+      JourneyPreviewHeader._bottomPadding(context);
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(Dimensions.twelve),
-    margin: const EdgeInsets.only(bottom: Dimensions.sixteen),
-    decoration: BoxDecoration(
-      color: isComplete
-          ? Colours.green.withValues(alpha: 0.12)
-          : Colours.yellow.withValues(alpha: 0.18),
-      borderRadius: BorderRadius.circular(Dimensions.eight),
-    ),
-    child: isComplete
-        ? Text(
-            Get.appLocalizations.journeyComplete,
-            style: Get.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    final l10n = Get.appLocalizations;
+    final stepIndex = progress?.stepIndex ?? 0;
+    final step = journey.steps.elementAtOrNull(stepIndex);
+    final instruction = switch (step) {
+      null => l10n.journeyComplete,
+      JourneyStep(type: JourneyStepType.walk, hasMappedWalkingRoute: false) =>
+        stepIndex == 0 ? l10n.walkToPickup : l10n.walkToDestination,
+      _ => step.instruction,
+    };
+    final nextStopDistance =
+        progress?.distanceToNextStepMeters ?? step?.distanceMeters ?? 0;
+    final remainingMinutes =
+        progress?.remainingMinutes ?? journey.estimatedTravelMinutes;
+    final remainingDistance =
+        progress?.remainingDistanceMeters ?? journey.totalDistanceMeters;
+
+    return SizedBox(
+      height: heightFor(context),
+      child: ColoredBox(
+        color: Colors.white,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            0,
+            16,
+            JourneyPreviewHeader._bottomPadding(context),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                journey.steps[stepIndex].instruction,
-                style: Get.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+              SizedBox(
+                height: _handleHeight,
+                child: Center(child: dragHandle),
+              ),
+              SizedBox(
+                height: _instructionHeight(context),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colours.journeyPurple.withValues(
+                        alpha: .10,
+                      ),
+                      foregroundColor: Colours.journeyPurple,
+                      child: Icon(
+                        step == null
+                            ? Icons.check_rounded
+                            : _journeyStepIcon(step.type),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            instruction,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colours.primaryOne,
+                              fontSize: _instructionSize,
+                              height: 1.2,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            step == null
+                                ? journey.destination.label
+                                : l10n.distanceToNextStop(
+                                    TaxiRoutingService.formatDistance(
+                                      nextStopDistance,
+                                    ),
+                                  ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _captionStyle,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: onClose,
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      tooltip: 'Close journey',
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                '${TaxiRoutingService.formatDistance(distanceToNextStepMeters)} '
-                '${Get.appLocalizations.remaining}',
-                style: Get.textTheme.bodySmall,
+              const SizedBox(height: _gap),
+              SizedBox(
+                height: _metricsHeight(context),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _metric(
+                        remainingMinutes == 0
+                            ? '0 min'
+                            : '≈ $remainingMinutes min',
+                        l10n.remainingTime,
+                      ),
+                    ),
+                    const VerticalDivider(width: 28, indent: 4, endIndent: 4),
+                    Expanded(
+                      child: _metric(
+                        TaxiRoutingService.formatDistance(remainingDistance),
+                        l10n.remainingDistance,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  static const _captionStyle = TextStyle(
+    color: Colours.charcoalLight,
+    fontSize: _captionSize,
+    height: 1.25,
+    fontWeight: FontWeight.w600,
+  );
+
+  Widget _metric(String value, String label) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Colours.primaryOne,
+          fontSize: _metricSize,
+          height: 1.2,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      const SizedBox(height: 3),
+      Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: _captionStyle,
+      ),
+    ],
   );
 }
 

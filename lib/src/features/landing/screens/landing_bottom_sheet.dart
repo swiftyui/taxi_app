@@ -24,21 +24,36 @@ class LandingBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => Obx(() {
-      final journey =
-          _actionsProvider.selectedAction.value == ActionType.journeyReady
+      final action = _actionsProvider.selectedAction.value;
+      final previewing = action == ActionType.journeyReady;
+      final guiding =
+          action == ActionType.journeyStarted ||
+          action == ActionType.journeyCompleted;
+      final journey = previewing || guiding
           ? _actionsProvider.journey.value
           : null;
       final recommended =
           journey != null &&
           _actionsProvider.journeyOptions.firstOrNull == journey;
       final maxSize = journey == null ? 0.85 : 0.80;
-      final collapsedSize = journey == null
-          ? 0.15
-          : (JourneyPreviewHeader.heightFor(context) / constraints.maxHeight)
-                .clamp(0.15, maxSize);
+      final headerHeight = journey == null
+          ? 0.0
+          : previewing
+          ? JourneyPreviewHeader.heightFor(context)
+          : JourneyGuidanceHeader.heightFor(context);
+      final collapsedSize = (headerHeight / constraints.maxHeight).clamp(
+        0.15,
+        maxSize,
+      );
 
       return DraggableScrollableSheet(
-        key: ValueKey(journey != null),
+        key: ValueKey(
+          journey == null
+              ? null
+              : previewing
+              ? ActionType.journeyReady
+              : ActionType.journeyStarted,
+        ),
         initialChildSize: collapsedSize,
         minChildSize: collapsedSize,
         maxChildSize: maxSize,
@@ -63,7 +78,7 @@ class LandingBottomSheet extends StatelessWidget {
           child: CustomScrollView(
             controller: scrollController,
             slivers: [
-              if (journey != null)
+              if (journey != null && previewing)
                 PinnedHeaderSliver(
                   child: JourneyPreviewHeader(
                     journey: journey,
@@ -71,6 +86,17 @@ class LandingBottomSheet extends StatelessWidget {
                     dragHandle: _dragHandle,
                     onStart: _actionsProvider.startJourney,
                     onClose: _actionsProvider.clearJourney,
+                  ),
+                )
+              else if (journey != null)
+                PinnedHeaderSliver(
+                  child: Obx(
+                    () => JourneyGuidanceHeader(
+                      journey: journey,
+                      progress: _actionsProvider.journeyProgress.value,
+                      dragHandle: _dragHandle,
+                      onClose: _actionsProvider.clearJourney,
+                    ),
                   ),
                 )
               else

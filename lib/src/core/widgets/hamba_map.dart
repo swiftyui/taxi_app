@@ -16,6 +16,7 @@ class HambaMap extends StatelessWidget {
     required this.zoom,
     this.onTap,
     this.onReady,
+    this.onMapGesture,
     this.markers = const [],
     this.paths = const [],
     this.routeBadges = const [],
@@ -29,6 +30,7 @@ class HambaMap extends StatelessWidget {
   final double zoom;
   final void Function(LatLng)? onTap;
   final VoidCallback? onReady;
+  final VoidCallback? onMapGesture;
   final List<HambaMapMarker> markers;
   final List<HambaMapPath> paths;
   final List<HambaMapRouteBadge> routeBadges;
@@ -53,6 +55,11 @@ class HambaMap extends StatelessWidget {
           initialZoom: zoom,
           backgroundColor: const Color(0xFFF7F9F8),
           onMapReady: onReady,
+          onPositionChanged: (_, hasGesture) {
+            if (hasGesture) {
+              onMapGesture?.call();
+            }
+          },
           onTap: (_, point) => onTap?.call(point),
           interactionOptions: const InteractionOptions(
             flags: InteractiveFlag.all,

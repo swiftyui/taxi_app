@@ -222,11 +222,12 @@ class SafetyProvider extends GetxController {
               '${leg.route.properties.destname}',
         )
         .join(' → ');
+    final stepIndex = actions.activeJourneyStepIndex;
     final isActive =
         actions.selectedAction.value == ActionType.journeyStarted &&
-        actions.activeJourneyStepIndex.value < journey.steps.length;
+        stepIndex < journey.steps.length;
     final currentStep = isActive
-        ? journey.steps[actions.activeJourneyStepIndex.value].instruction
+        ? journey.steps[stepIndex].instruction
         : 'Journey planned';
     final prefix = isSos
         ? 'SOS: I may need help during my HambaGo journey.'

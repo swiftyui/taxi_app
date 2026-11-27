@@ -1,3 +1,5 @@
+import 'package:TaxiApp/src/core/enums/action_type.dart';
+import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
 import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:TaxiApp/src/core/widgets/hamba_map.dart';
@@ -18,20 +20,25 @@ class LandingScreen extends StatefulWidget {
 }
 
 class _LandingScreenState extends State<LandingScreen> {
+  final ActionsProvider _actionsProvider = ActionsProvider.create();
   final MapsProvider _mapsProvider = MapsProvider.create();
   final UserLocationProvider _userLocationProvider =
       UserLocationProvider.create();
   late final Worker _locationWorker;
+  late final Worker _actionWorker;
   bool _mapReady = false;
   bool _centeredOnInitialLocation = false;
 
   @override
   void initState() {
     super.initState();
-    _locationWorker = ever(
-      _userLocationProvider.userLocation,
-      (_) => _centerOnInitialLocation(),
-    );
+    _locationWorker = ever(_userLocationProvider.userLocation, (_) {
+      _centerOnInitialLocation();
+      if (_mapReady) {
+        _mapsProvider.followJourneyLocation();
+      }
+    });
+    _actionWorker = ever(_actionsProvider.selectedAction, _updateJourneyCamera);
   }
 
   @override
@@ -40,6 +47,20 @@ class _LandingScreenState extends State<LandingScreen> {
     _mapsProvider.journeyPreviewPanelHeight = JourneyPreviewHeader.heightFor(
       context,
     );
+    _mapsProvider.journeyGuidancePanelHeight = JourneyGuidanceHeader.heightFor(
+      context,
+    );
+  }
+
+  void _updateJourneyCamera(ActionType? action) {
+    if (!_mapReady) {
+      return;
+    }
+    if (action == ActionType.journeyStarted) {
+      _mapsProvider.startFollowingJourney();
+    } else {
+      _mapsProvider.stopFollowingJourney();
+    }
   }
 
   void _centerOnInitialLocation() {
@@ -49,12 +70,16 @@ class _LandingScreenState extends State<LandingScreen> {
       return;
     }
     _centeredOnInitialLocation = true;
-    _mapsProvider.moveToMyLocation();
+    if (_actionsProvider.selectedAction.value != ActionType.journeyStarted) {
+      _mapsProvider.moveToMyLocation();
+    }
   }
 
   @override
   void dispose() {
     _locationWorker.dispose();
+    _actionWorker.dispose();
+    _mapsProvider.stopFollowingJourney();
     super.dispose();
   }
 
@@ -80,7 +105,9 @@ class _LandingScreenState extends State<LandingScreen> {
             onReady: () {
               _mapReady = true;
               _centerOnInitialLocation();
+              _updateJourneyCamera(_actionsProvider.selectedAction.value);
             },
+            onMapGesture: _mapsProvider.stopFollowingJourney,
           ),
           LandingBottomSheet(),
           Align(

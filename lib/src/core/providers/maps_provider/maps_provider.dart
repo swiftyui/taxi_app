@@ -36,6 +36,8 @@ class MapsProvider extends GetxController {
   final List<HambaMapPath> paths = [];
   final List<HambaMapRouteBadge> routeBadges = [];
   double journeyPreviewPanelHeight = 0;
+  double journeyGuidancePanelHeight = 0;
+  bool _followingJourney = false;
 
   Future<void> updateMarkers({bool fitCamera = true}) async {
     final actions = ActionsProvider.create();
@@ -155,7 +157,8 @@ class MapsProvider extends GetxController {
                 dashed: journey.steps[i].type != JourneyStepType.taxi,
               ),
           ]);
-          if (fitCamera) {
+          if (fitCamera &&
+              actions.selectedAction.value != ActionType.journeyStarted) {
             _fitJourney(journey, options, previewing: previewing);
           }
           if (previewing) {
@@ -308,11 +311,11 @@ class MapsProvider extends GetxController {
   Color _stepColor(JourneyStep step, int index, ActionsProvider actions) {
     if (actions.selectedAction.value == ActionType.journeyCompleted ||
         (actions.selectedAction.value == ActionType.journeyStarted &&
-            index < actions.activeJourneyStepIndex.value)) {
+            index < actions.activeJourneyStepIndex)) {
       return const Color(0xFF7B8687);
     }
     if (actions.selectedAction.value == ActionType.journeyStarted &&
-        index == actions.activeJourneyStepIndex.value) {
+        index == actions.activeJourneyStepIndex) {
       return step.type == JourneyStepType.taxi
           ? const Color(0xFF004E48)
           : Colours.blue;
@@ -328,7 +331,7 @@ class MapsProvider extends GetxController {
     final width = step.type == JourneyStepType.taxi ? 6.5 : 4.5;
     final active =
         actions.selectedAction.value == ActionType.journeyStarted &&
-        index == actions.activeJourneyStepIndex.value;
+        index == actions.activeJourneyStepIndex;
     return active ? width + 1.5 : width;
   }
 
@@ -369,12 +372,44 @@ class MapsProvider extends GetxController {
     );
   }
 
+  void startFollowingJourney() {
+    _followingJourney = true;
+    followJourneyLocation(zoomIn: true);
+  }
+
+  void stopFollowingJourney() => _followingJourney = false;
+
+  void followJourneyLocation({bool zoomIn = false}) {
+    final position = UserLocationProvider.create().userLocation.value;
+    if (!_followingJourney || position == null) {
+      return;
+    }
+    final camera = mapController.camera;
+    final zoom = zoomIn ? math.max(camera.zoom, 16.0) : camera.zoom;
+    final mapHeight = camera.nonRotatedSize.height;
+    final panelHeight = journeyGuidancePanelHeight.clamp(
+      mapHeight * .15,
+      mapHeight * .8,
+    );
+    final visibleHeight = mapHeight - panelHeight;
+    // Leave room to see the route ahead above the location marker.
+    final locationOffset = visibleHeight * .58 - mapHeight / 2;
+    mapController.move(
+      LatLng(position.latitude, position.longitude),
+      zoom,
+      offset: Offset(0, locationOffset),
+    );
+  }
+
   Future<void> moveToMyLocation() async {
     final location = UserLocationProvider.create();
     final position =
         location.userLocation.value ??
         await location.refreshLocation(requestPermission: true);
-    if (position != null) {
+    if (ActionsProvider.create().selectedAction.value ==
+        ActionType.journeyStarted) {
+      startFollowingJourney();
+    } else if (position != null) {
       mapController.move(LatLng(position.latitude, position.longitude), 15);
     }
   }
