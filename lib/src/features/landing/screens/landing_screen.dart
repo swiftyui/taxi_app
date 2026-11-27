@@ -89,7 +89,7 @@ class _LandingScreenState extends State<LandingScreen> {
                       ],
                     ),
                     const SizedBox(height: Dimensions.eight),
-                    const OsmAttribution(),
+                    const OsmAttribution(includeVectorCredits: true),
                   ],
                 ),
               ),

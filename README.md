@@ -20,12 +20,13 @@ firebase deploy --only firestore:rules
 
 ## Maps and open map data
 
-HambaGo renders its own map interface with `flutter_map` and OpenStreetMap
-tiles. Map display, destination search, and reverse geocoding do not require a
-Google Maps SDK or API key. OpenStreetMap attribution is shown on map screens.
-The public OSM tile and Nominatim endpoints are community infrastructure with
-usage policies, rate limits, and no service guarantee; production scale may
-require self-hosted tiles/geocoding or another OSM-based provider.
+HambaGo draws an app-owned [street style](assets/map/hambago-streets.json)
+with `flutter_map` and OpenFreeMap vector tiles based on OpenStreetMap data.
+The map can fall back to standard OpenStreetMap tiles if the vector source
+cannot be loaded. Map display, destination search, and reverse geocoding do
+not require an API key. Map screens credit OpenStreetMap, OpenMapTiles, and
+OpenFreeMap. Public map services and Nominatim are subject to their providers'
+usage policies and availability.
 
 ## Journey safety
 

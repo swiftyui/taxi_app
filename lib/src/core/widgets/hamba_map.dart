@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_vector_tiles/flutter_map_vector_tiles.dart'
+    as vector;
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -28,13 +32,6 @@ class HambaMap extends StatelessWidget {
   final LatLng? userLocation;
   final bool showAttribution;
 
-  // Tone down the printed tile colors while keeping roads and labels legible.
-  static const _baseMapFilter = ColorFilter.matrix(<double>[
-    0.358, 0.423, 0.043, 0, 37, // Red
-    0.126, 0.655, 0.043, 0, 41, // Green
-    0.126, 0.423, 0.275, 0, 40, // Blue
-    0, 0, 0, 1, 0, // Alpha
-  ]);
   static final _walkingPattern = StrokePattern.dashed(segments: const [4, 7]);
   static final _pinAnchor = Marker.computePixelAlignment(
     width: 44,
@@ -51,7 +48,7 @@ class HambaMap extends StatelessWidget {
         options: MapOptions(
           initialCenter: center,
           initialZoom: zoom,
-          backgroundColor: const Color(0xFFE7ECE8),
+          backgroundColor: const Color(0xFFF7F9F8),
           onMapReady: onReady,
           onTap: (_, point) => onTap?.call(point),
           interactionOptions: const InteractionOptions(
@@ -59,14 +56,7 @@ class HambaMap extends StatelessWidget {
           ),
         ),
         children: [
-          ColorFiltered(
-            colorFilter: _baseMapFilter,
-            child: TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.hambago.taxiapp',
-              maxNativeZoom: 19,
-            ),
-          ),
+          const _HambaBasemap(),
           if (paths.isNotEmpty)
             PolylineLayer(
               polylines: [
@@ -107,9 +97,99 @@ class HambaMap extends StatelessWidget {
         ],
       ),
       if (showAttribution)
-        const Positioned(right: 8, top: 64, child: OsmAttribution()),
+        const Positioned(
+          left: 8,
+          right: 8,
+          top: 64,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: OsmAttribution(includeVectorCredits: true),
+          ),
+        ),
     ],
   );
+}
+
+class _HambaBasemap extends StatefulWidget {
+  const _HambaBasemap();
+
+  @override
+  State<_HambaBasemap> createState() => _HambaBasemapState();
+}
+
+class _HambaBasemapState extends State<_HambaBasemap> {
+  static const _rasterFilter = ColorFilter.matrix(<double>[
+    0.358, 0.423, 0.043, 0, 37, // Red
+    0.126, 0.655, 0.043, 0, 41, // Green
+    0.126, 0.423, 0.275, 0, 40, // Blue
+    0, 0, 0, 1, 0, // Alpha
+  ]);
+
+  vector.Style? _style;
+  Timer? _fallbackTimer;
+  bool _showRaster = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fallbackTimer = Timer(const Duration(seconds: 4), _showRasterMap);
+    unawaited(_loadStyle());
+  }
+
+  Future<void> _loadStyle() async {
+    try {
+      final style = await const vector.StyleReader(
+        uri: 'asset://assets/map/hambago-streets.json',
+      ).read();
+      if (!mounted || style.providers.providers.isEmpty) {
+        style.dispose();
+        _showRasterMap();
+        return;
+      }
+      setState(() => _style = style);
+    } catch (_) {
+      _showRasterMap();
+    } finally {
+      _fallbackTimer?.cancel();
+    }
+  }
+
+  void _showRasterMap() {
+    if (mounted && !_showRaster) {
+      setState(() => _showRaster = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _fallbackTimer?.cancel();
+    _style?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _style;
+    if (style != null) {
+      return vector.VectorTileLayer(
+        theme: style.theme,
+        tileProviders: style.providers,
+        glyphs: style.glyphs,
+        tileOffset: vector.TileOffset.none,
+      );
+    }
+    if (_showRaster) {
+      return ColorFiltered(
+        colorFilter: _rasterFilter,
+        child: TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.hambago.taxiapp',
+          maxNativeZoom: 19,
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
 }
 
 class _MapPin extends StatelessWidget {
@@ -215,21 +295,39 @@ class _UserLocationDot extends StatelessWidget {
 }
 
 class OsmAttribution extends StatelessWidget {
-  const OsmAttribution({super.key});
+  const OsmAttribution({this.includeVectorCredits = false, super.key});
+
+  final bool includeVectorCredits;
 
   @override
   Widget build(BuildContext context) => Material(
     color: Colors.white.withValues(alpha: .92),
     borderRadius: BorderRadius.circular(4),
-    child: InkWell(
-      onTap: () =>
-          launchUrl(Uri.parse('https://www.openstreetmap.org/copyright')),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        child: Text(
-          '© OpenStreetMap contributors',
-          style: TextStyle(color: Color(0xFF25363A), fontSize: 10),
-        ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Wrap(
+        alignment: WrapAlignment.end,
+        children: [
+          _credit(
+            '© OpenStreetMap contributors',
+            'https://www.openstreetmap.org/copyright',
+          ),
+          if (includeVectorCredits) ...[
+            _credit('OpenFreeMap', 'https://openfreemap.org'),
+            _credit('© OpenMapTiles', 'https://openmaptiles.org'),
+          ],
+        ],
+      ),
+    ),
+  );
+
+  Widget _credit(String label, String url) => InkWell(
+    onTap: () => launchUrl(Uri.parse(url)),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
+      child: Text(
+        label,
+        style: const TextStyle(color: Color(0xFF25363A), fontSize: 10),
       ),
     ),
   );
