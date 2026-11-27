@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
@@ -14,7 +16,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class LandingBottomSheet extends StatelessWidget {
-  LandingBottomSheet({super.key});
+  LandingBottomSheet({
+    required this.viewportHeight,
+    required this.onExtentChanged,
+    super.key,
+  });
+
+  final double viewportHeight;
+  final ValueChanged<double> onExtentChanged;
 
   final TaxiRoutesProvider _taxiRoutesProvider = TaxiRoutesProvider.create();
   final ActionsProvider _actionsProvider = ActionsProvider.create();
@@ -23,97 +32,122 @@ class LandingBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => Obx(() {
-      final action = _actionsProvider.selectedAction.value;
-      final previewing = action == ActionType.journeyReady;
-      final guiding =
-          action == ActionType.journeyStarted ||
-          action == ActionType.journeyCompleted;
-      final journey = previewing || guiding
-          ? _actionsProvider.journey.value
-          : null;
-      final recommended =
-          journey != null &&
-          _actionsProvider.journeyOptions.firstOrNull == journey;
-      final maxSize = journey == null ? 0.85 : 0.80;
-      final headerHeight = journey == null
-          ? 0.0
-          : previewing
-          ? JourneyPreviewHeader.heightFor(context)
-          : JourneyGuidanceHeader.heightFor(context);
-      final collapsedSize = (headerHeight / constraints.maxHeight).clamp(
-        0.15,
-        maxSize,
+    builder: (context, constraints) {
+      final availableHeight = constraints.maxHeight;
+      if (availableHeight <= 0) {
+        return const SizedBox.shrink();
+      }
+      return NotificationListener<DraggableScrollableNotification>(
+        onNotification: (notification) {
+          if (notification.depth == 0) {
+            onExtentChanged(
+              notification.extent * availableHeight / viewportHeight,
+            );
+          }
+          return false;
+        },
+        child: Obx(() => _buildSheet(context, availableHeight)),
       );
+    },
+  );
 
-      return DraggableScrollableSheet(
-        key: ValueKey(
-          journey == null
-              ? null
-              : previewing
-              ? ActionType.journeyReady
-              : ActionType.journeyStarted,
-        ),
-        initialChildSize: collapsedSize,
-        minChildSize: collapsedSize,
-        maxChildSize: maxSize,
-        expand: false,
-        snap: true,
-        snapSizes: [if (collapsedSize < 0.45) 0.45],
-        builder: (context, scrollController) => Container(
-          width: double.infinity,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(journey != null ? 24 : Dimensions.sixteen),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 2,
-                offset: const Offset(0, -5),
-              ),
-            ],
+  Widget _buildSheet(BuildContext context, double availableHeight) {
+    final action = _actionsProvider.selectedAction.value;
+    final previewing = action == ActionType.journeyReady;
+    final guiding =
+        action == ActionType.journeyStarted ||
+        action == ActionType.journeyCompleted;
+    final journey = previewing || guiding
+        ? _actionsProvider.journey.value
+        : null;
+    final recommended =
+        journey != null &&
+        _actionsProvider.journeyOptions.firstOrNull == journey;
+    final maxHeight = math.min(
+      availableHeight,
+      viewportHeight * (journey == null ? 0.85 : 0.80),
+    );
+    final maxSize = maxHeight / availableHeight;
+    final headerHeight = journey == null
+        ? 0.0
+        : previewing
+        ? JourneyPreviewHeader.heightFor(context)
+        : JourneyGuidanceHeader.heightFor(context);
+    final collapsedSize =
+        math.min(maxHeight, math.max(headerHeight, viewportHeight * 0.15)) /
+        availableHeight;
+    final intermediateSize = viewportHeight * 0.45 / availableHeight;
+
+    return DraggableScrollableSheet(
+      key: ValueKey(
+        journey == null
+            ? null
+            : previewing
+            ? ActionType.journeyReady
+            : ActionType.journeyStarted,
+      ),
+      initialChildSize: collapsedSize,
+      minChildSize: collapsedSize,
+      maxChildSize: maxSize,
+      expand: false,
+      snap: true,
+      snapSizes: [
+        if (collapsedSize < intermediateSize && intermediateSize < maxSize)
+          intermediateSize,
+      ],
+      builder: (context, scrollController) => Container(
+        width: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(journey != null ? 24 : Dimensions.sixteen),
           ),
-          child: CustomScrollView(
-            controller: scrollController,
-            slivers: [
-              if (journey != null && previewing)
-                PinnedHeaderSliver(
-                  child: JourneyPreviewHeader(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 2,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: CustomScrollView(
+          controller: scrollController,
+          slivers: [
+            if (journey != null && previewing)
+              PinnedHeaderSliver(
+                child: JourneyPreviewHeader(
+                  journey: journey,
+                  recommended: recommended,
+                  dragHandle: _dragHandle,
+                  onStart: _actionsProvider.startJourney,
+                  onClose: _actionsProvider.clearJourney,
+                ),
+              )
+            else if (journey != null)
+              PinnedHeaderSliver(
+                child: Obx(
+                  () => JourneyGuidanceHeader(
                     journey: journey,
-                    recommended: recommended,
+                    progress: _actionsProvider.journeyProgress.value,
                     dragHandle: _dragHandle,
-                    onStart: _actionsProvider.startJourney,
                     onClose: _actionsProvider.clearJourney,
                   ),
-                )
-              else if (journey != null)
-                PinnedHeaderSliver(
-                  child: Obx(
-                    () => JourneyGuidanceHeader(
-                      journey: journey,
-                      progress: _actionsProvider.journeyProgress.value,
-                      dragHandle: _dragHandle,
-                      onClose: _actionsProvider.clearJourney,
-                    ),
-                  ),
-                )
-              else
-                SliverToBoxAdapter(
-                  child: Center(child: _dragHandle).paddingOnly(
-                    top: Dimensions.sixteen,
-                    bottom: Dimensions.eight,
-                  ),
                 ),
-              SliverToBoxAdapter(child: Obx(() => _buildBottomSheetContent)),
-            ],
-          ),
+              )
+            else
+              SliverToBoxAdapter(
+                child: Center(child: _dragHandle).paddingOnly(
+                  top: Dimensions.sixteen,
+                  bottom: Dimensions.eight,
+                ),
+              ),
+            SliverToBoxAdapter(child: Obx(() => _buildBottomSheetContent)),
+          ],
         ),
-      );
-    }),
-  );
+      ),
+    );
+  }
 
   Widget get _dragHandle => Container(
     width: 40,

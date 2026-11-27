@@ -82,19 +82,17 @@ class _LandingScreenState extends State<LandingScreen> {
     }
   }
 
-  bool _onJourneySheetResized(DraggableScrollableNotification notification) {
-    if (notification.depth == 0 &&
-        _mapReady &&
+  void _onJourneySheetResized(double extent) {
+    if (_mapReady &&
         _actionsProvider.selectedAction.value == ActionType.journeyStarted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted &&
             _actionsProvider.selectedAction.value ==
                 ActionType.journeyStarted) {
-          _mapsProvider.updateJourneyPanelExtent(notification.extent);
+          _mapsProvider.updateJourneyPanelExtent(extent);
         }
       });
     }
-    return false;
   }
 
   @override
@@ -138,38 +136,42 @@ class _LandingScreenState extends State<LandingScreen> {
             onMapGesture: _mapsProvider.stopFollowingJourney,
           ),
           Positioned.fill(
-            child: CustomMultiChildLayout(
-              delegate: _LandingMapOverlayLayout(MediaQuery.paddingOf(context)),
-              children: [
-                LayoutId(
-                  id: _LandingMapOverlay.panel,
-                  child: NotificationListener<DraggableScrollableNotification>(
-                    onNotification: _onJourneySheetResized,
-                    child: LandingBottomSheet(),
-                  ),
+            child: LayoutBuilder(
+              builder: (context, constraints) => CustomMultiChildLayout(
+                delegate: _LandingMapOverlayLayout(
+                  MediaQuery.paddingOf(context),
                 ),
-                LayoutId(
-                  id: _LandingMapOverlay.controls,
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Row(
-                        children: [
-                          const Expanded(child: LandingSearchBar()),
-                          MyLocationButton().paddingOnly(
-                            left: Dimensions.eight,
-                          ),
-                        ],
+                children: [
+                  LayoutId(
+                    id: _LandingMapOverlay.panel,
+                    child: LandingBottomSheet(
+                      viewportHeight: constraints.maxHeight,
+                      onExtentChanged: _onJourneySheetResized,
+                    ),
+                  ),
+                  LayoutId(
+                    id: _LandingMapOverlay.controls,
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Row(
+                          children: [
+                            const Expanded(child: LandingSearchBar()),
+                            MyLocationButton().paddingOnly(
+                              left: Dimensions.eight,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                LayoutId(
-                  id: _LandingMapOverlay.credits,
-                  child: const OsmAttribution(includeVectorCredits: true),
-                ),
-              ],
+                  LayoutId(
+                    id: _LandingMapOverlay.credits,
+                    child: const OsmAttribution(includeVectorCredits: true),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -192,10 +194,6 @@ class _LandingMapOverlayLayout extends MultiChildLayoutDelegate {
       maxWidth: size.width,
       maxHeight: size.height,
     );
-    final panel = layoutChild(_LandingMapOverlay.panel, fullWidth);
-    final panelTop = size.height - panel.height;
-    positionChild(_LandingMapOverlay.panel, Offset(0, panelTop));
-
     final controls = layoutChild(_LandingMapOverlay.controls, fullWidth);
     positionChild(_LandingMapOverlay.controls, Offset.zero);
 
@@ -209,14 +207,23 @@ class _LandingMapOverlayLayout extends MultiChildLayoutDelegate {
         ),
       ),
     );
-    final bottomAlignedTop = panelTop - credits.height;
-    final creditTop = bottomAlignedTop >= controls.height
-        ? math.max(controls.height, bottomAlignedTop - 6)
-        // A tall panel can leave too little space below the top controls.
-        : safePadding.top;
+    const creditGap = 6.0;
+    final maxPanelHeight = math.max(
+      0.0,
+      size.height - controls.height - credits.height - creditGap,
+    );
+    final panel = layoutChild(
+      _LandingMapOverlay.panel,
+      fullWidth.copyWith(maxHeight: maxPanelHeight),
+    );
+    final panelTop = size.height - panel.height;
+    positionChild(_LandingMapOverlay.panel, Offset(0, panelTop));
     positionChild(
       _LandingMapOverlay.credits,
-      Offset(size.width - safePadding.right - inset - credits.width, creditTop),
+      Offset(
+        size.width - safePadding.right - inset - credits.width,
+        panelTop - credits.height - creditGap,
+      ),
     );
   }
 
