@@ -483,13 +483,13 @@ class OsmAttribution extends StatelessWidget {
         alignment: WrapAlignment.end,
         children: [
           _credit(
-            '© OpenStreetMap contributors',
+            includeVectorCredits
+                ? '© OpenStreetMap'
+                : '© OpenStreetMap contributors',
             'https://www.openstreetmap.org/copyright',
           ),
-          if (includeVectorCredits) ...[
-            _credit('OpenFreeMap', 'https://openfreemap.org'),
+          if (includeVectorCredits)
             _credit('© OpenMapTiles', 'https://openmaptiles.org'),
-          ],
         ],
       ),
     ),

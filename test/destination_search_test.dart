@@ -163,6 +163,99 @@ void main() {
   );
 
   test(
+    'ranks nearby fuzzy matches first and keeps a clearly named distant place',
+    () {
+      const near = LatLng(-25.7932, 28.30945);
+      const nearby = DestinationSearchResult(
+        label: 'Central Taxi Rank',
+        subtitle: 'Pretoria',
+        position: LatLng(-25.8, 28.3),
+      );
+      const distant = DestinationSearchResult(
+        label: 'Central Taxi Rank',
+        subtitle: 'Cape Town',
+        position: LatLng(-33.9, 18.4),
+      );
+      final service = DestinationSearchService();
+      expect(
+        service.mergeSuggestions(
+          query: 'Cnetral Taxi',
+          local: [distant],
+          online: [nearby],
+          near: near,
+        ),
+        [nearby, distant],
+      );
+      expect(
+        service
+            .mergeSuggestions(
+              query: 'Central Taxi Rank Cape Town',
+              local: [nearby],
+              online: [distant],
+              near: near,
+            )
+            .first,
+        distant,
+      );
+      expect(
+        service.suggestions(
+          query: 'Cnetral Taxi',
+          taxiRoutes: [],
+          savedPlaces: [distant, nearby],
+          near: near,
+        ),
+        [nearby, distant],
+      );
+    },
+  );
+
+  test(
+    'shares only an approximate area and keeps live caches separate by region',
+    () async {
+      final requests = <Map<String, String>>[];
+      final service = DestinationSearchService(
+        photon: PhotonPlaceSearch(
+          client: MockClient((request) async {
+            requests.add(request.url.queryParameters);
+            return http.Response('{"features":[]}', 200);
+          }),
+        ),
+      );
+
+      await service.liveSuggestions(
+        'Taxi rank',
+        near: const LatLng(-25.7932, 28.30945),
+      );
+      await service.liveSuggestions(
+        'taxi rank',
+        near: const LatLng(-25.814, 28.323),
+      );
+      await service.liveSuggestions(
+        'Taxi rank',
+        near: const LatLng(-33.9249, 18.4241),
+      );
+      expect(requests, [
+        {
+          'q': 'Taxi rank',
+          'countrycode': 'ZA',
+          'limit': '6',
+          'lat': '-25.8',
+          'lon': '28.3',
+          'location_bias_scale': '0.15',
+        },
+        {
+          'q': 'Taxi rank',
+          'countrycode': 'ZA',
+          'limit': '6',
+          'lat': '-33.9',
+          'lon': '18.4',
+          'location_bias_scale': '0.15',
+        },
+      ]);
+    },
+  );
+
+  test(
     'persists previous terms and selected destinations with MRU ordering',
     () async {
       SharedPreferences.setMockInitialValues({

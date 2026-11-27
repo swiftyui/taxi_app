@@ -4,6 +4,7 @@ import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/models/destination_search_result.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/providers/saved_places_provider/saved_places_provider.dart';
+import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
 import 'package:TaxiApp/src/core/models/saved_place.dart';
 import 'package:TaxiApp/src/core/services/destination_query.dart';
 import 'package:TaxiApp/src/core/services/destination_search_history.dart';
@@ -15,6 +16,7 @@ import 'package:TaxiApp/src/core/widgets/hamba_map.dart';
 import 'package:TaxiApp/src/core/widgets/loaders/hambago_shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:latlong2/latlong.dart';
 
 class SearchRoutesScreen extends StatefulWidget {
   const SearchRoutesScreen({super.key});
@@ -28,6 +30,7 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
   static final _history = DestinationSearchHistory();
   final TaxiRoutesProvider _taxiRoutesProvider = TaxiRoutesProvider.create();
   final SavedPlacesProvider _savedPlacesProvider = SavedPlacesProvider.create();
+  final UserLocationProvider _locationProvider = UserLocationProvider.create();
   final RxList<RecentDestinationSearch> _recentSearches =
       <RecentDestinationSearch>[].obs;
   final RxList<DestinationSearchResult> _results =
@@ -41,6 +44,13 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
   int _searchGeneration = 0;
   Timer? _liveDebounce;
   Completer<void>? _liveRequest;
+
+  LatLng? get _searchLocation {
+    final position = _locationProvider.userLocation.value;
+    return position == null
+        ? null
+        : LatLng(position.latitude, position.longitude);
+  }
 
   @override
   void initState() {
@@ -86,6 +96,7 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
     try {
       final results = await _searchService.liveSuggestions(
         query,
+        near: _searchLocation,
         abortTrigger: request.future,
       );
       if (generation == _searchGeneration) {
@@ -113,10 +124,12 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
     FocusScope.of(context).unfocus();
     final generation = ++_searchGeneration;
     _cancelLiveLookup();
+    final near = _searchLocation;
     final onScreen = _searchService.mergeSuggestions(
       query: query,
-      local: _suggestions(query),
+      local: _suggestions(query, near: near),
       online: _results,
+      near: near,
     );
     _isSearching.value = true;
     _hasSubmittedSearch.value = true;
@@ -143,7 +156,7 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
     }
   }
 
-  List<DestinationSearchResult> _suggestions(String query) =>
+  List<DestinationSearchResult> _suggestions(String query, {LatLng? near}) =>
       _searchService.suggestions(
         query: query,
         taxiRoutes: _taxiRoutesProvider.taxiRoutes,
@@ -151,6 +164,7 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
           (place) => place.destination,
         ),
         recentSearches: _recentSearches,
+        near: near,
       );
 
   Future<void> _showHistory(
@@ -311,12 +325,14 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
     final submitted = _hasSubmittedSearch.value;
     final searching = _isSearching.value;
     final results = _results.toList();
+    final near = submitted && !searching ? null : _searchLocation;
     final matches = submitted && !searching
         ? results
         : _searchService.mergeSuggestions(
             query: query,
-            local: _suggestions(query),
+            local: _suggestions(query, near: near),
             online: results,
+            near: near,
           );
     final matcher = DestinationQuery(query);
     final pastQueries = submitted || matcher.normalized.length < 2

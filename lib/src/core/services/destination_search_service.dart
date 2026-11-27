@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:TaxiApp/src/core/models/destination_search_result.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/taxi_route_model.dart';
 import 'package:TaxiApp/src/core/services/destination_query.dart';
@@ -25,24 +27,32 @@ class DestinationSearchService {
   final OsmGeocodingService _geocoding;
   final PhotonPlaceSearch _photon;
   final _lookups = <String, Future<List<DestinationSearchResult>>>{};
-  final _liveLookups = <String, List<DestinationSearchResult>>{};
+  final _liveLookups = <(String, LatLng?), List<DestinationSearchResult>>{};
 
   Future<List<DestinationSearchResult>> liveSuggestions(
     String query, {
+    LatLng? near,
     Future<void>? abortTrigger,
   }) async {
     final trimmed = query.trim();
     if (DestinationQuery.normalize(trimmed).length < 3) {
       return const [];
     }
-    final key = trimmed.toLowerCase();
+    // Photon only needs a city-scale bias. Rank using the precise fix locally.
+    final area = near == null
+        ? null
+        : LatLng(
+            (near.latitude * 10).round() / 10,
+            (near.longitude * 10).round() / 10,
+          );
+    final key = (trimmed.toLowerCase(), area);
     final cached = _liveLookups.remove(key);
     if (cached != null) {
       _liveLookups[key] = cached;
       return cached;
     }
     final results = List<DestinationSearchResult>.unmodifiable(
-      await _photon.search(trimmed, abortTrigger: abortTrigger),
+      await _photon.search(trimmed, area: area, abortTrigger: abortTrigger),
     );
     _liveLookups[key] = results;
     if (_liveLookups.length > 32) {
@@ -56,6 +66,7 @@ class DestinationSearchService {
     required Iterable<TaxiRouteModel> taxiRoutes,
     Iterable<DestinationSearchResult> savedPlaces = const [],
     Iterable<RecentDestinationSearch> recentSearches = const [],
+    LatLng? near,
   }) {
     final matcher = DestinationQuery(query);
     if (matcher.normalized.length < 2) {
@@ -65,7 +76,7 @@ class DestinationSearchService {
         <
           ({
             DestinationSearchResult result,
-            int score,
+            double score,
             int order,
             bool taxiStop,
           })
@@ -89,7 +100,7 @@ class DestinationSearchService {
         scores.sort();
         matches.add((
           result: result,
-          score: scores.first,
+          score: scores.first + _proximityPenalty(near, result.position),
           order: matches.length,
           taxiStop: taxiStop,
         ));
@@ -170,9 +181,10 @@ class DestinationSearchService {
     required String query,
     required Iterable<DestinationSearchResult> local,
     required Iterable<DestinationSearchResult> online,
+    LatLng? near,
   }) {
     final normalized = DestinationQuery.normalize(query);
-    return _deduplicate([
+    final matches = _deduplicate([
       ...local
           .where(
             (result) =>
@@ -182,6 +194,41 @@ class DestinationSearchService {
       ...online,
       ...local,
     ]).toList();
+    if (near == null) {
+      return matches;
+    }
+    final matcher = DestinationQuery(query);
+    final ranked =
+        [
+          for (final (index, place) in matches.indexed)
+            (
+              place: place,
+              order: index,
+              score:
+                  math.min(
+                    matcher.score(place.label) ?? 28,
+                    (matcher.score('${place.label} ${place.subtitle}') ?? 28) +
+                        3,
+                  ) +
+                  _proximityPenalty(near, place.position),
+            ),
+        ]..sort((left, right) {
+          final comparison = left.score.compareTo(right.score);
+          return comparison == 0
+              ? left.order.compareTo(right.order)
+              : comparison;
+        });
+    return ranked.map((match) => match.place).toList();
+  }
+
+  static double _proximityPenalty(LatLng? near, LatLng destination) {
+    if (near == null) {
+      return 0;
+    }
+    const distance = Distance(calculator: Haversine(), roundResult: false);
+    final meters = distance.as(LengthUnit.Meter, near, destination);
+    // Prefer nearby matches without overwhelming a specific, distant query.
+    return 18 * meters / (meters + 15000);
   }
 
   Future<List<DestinationSearchResult>> _searchOnline(String query) async {

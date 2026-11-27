@@ -20,6 +20,7 @@ class PhotonPlaceSearch {
 
   Future<List<DestinationSearchResult>> search(
     String query, {
+    LatLng? area,
     Future<void>? abortTrigger,
   }) async {
     final uri = _endpoint.replace(
@@ -28,6 +29,11 @@ class PhotonPlaceSearch {
         'q': query,
         'countrycode': 'ZA',
         'limit': '6',
+        if (area != null) ...{
+          'lat': area.latitude.toString(),
+          'lon': area.longitude.toString(),
+          'location_bias_scale': '0.15',
+        },
       },
     );
     final finished = Completer<void>();
