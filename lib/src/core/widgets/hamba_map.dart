@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_vector_tiles/flutter_map_vector_tiles.dart'
     as vector;
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 
 class HambaMap extends StatelessWidget {
@@ -21,6 +21,7 @@ class HambaMap extends StatelessWidget {
     this.paths = const [],
     this.routeBadges = const [],
     this.userLocation,
+    this.locationBearing,
     this.showAttribution = true,
     super.key,
   });
@@ -35,6 +36,7 @@ class HambaMap extends StatelessWidget {
   final List<HambaMapPath> paths;
   final List<HambaMapRouteBadge> routeBadges;
   final LatLng? userLocation;
+  final double? locationBearing;
   final bool showAttribution;
 
   static final _walkingPattern = StrokePattern.dashed(segments: const [4, 7]);
@@ -57,6 +59,12 @@ class HambaMap extends StatelessWidget {
           onMapReady: onReady,
           onPositionChanged: (_, hasGesture) {
             if (hasGesture) {
+              onMapGesture?.call();
+            }
+          },
+          onMapEvent: (event) {
+            if (event is MapEventRotate &&
+                event.source != MapEventSource.mapController) {
               onMapGesture?.call();
             }
           },
@@ -99,9 +107,9 @@ class HambaMap extends StatelessWidget {
                 if (userLocation != null)
                   Marker(
                     point: userLocation!,
-                    width: 32,
-                    height: 32,
-                    child: const _UserLocationDot(),
+                    width: locationBearing == null ? 32 : 46,
+                    height: locationBearing == null ? 32 : 46,
+                    child: _UserLocationMarker(bearing: locationBearing),
                   ),
               ],
             ),
@@ -397,25 +405,67 @@ class _PinDisc extends StatelessWidget {
   );
 }
 
-class _UserLocationDot extends StatelessWidget {
-  const _UserLocationDot();
+class _UserLocationMarker extends StatelessWidget {
+  const _UserLocationMarker({required this.bearing});
 
+  final double? bearing;
   static const _locationBlue = Color(0xFF1465C0);
+  static const _arrowBlue = Color(0xFF009CBD);
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: 'Your location',
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: _locationBlue.withValues(alpha: .17),
-        border: Border.all(color: _locationBlue.withValues(alpha: .34)),
+  Widget build(BuildContext context) {
+    final course = bearing;
+    final color = course == null ? _locationBlue : _arrowBlue;
+    return Semantics(
+      label: 'Your location',
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color.withValues(alpha: .17),
+          border: Border.all(color: color.withValues(alpha: .34)),
+        ),
+        child: Center(
+          child: course == null
+              ? const _PinDisc(color: _locationBlue, size: 17, borderWidth: 2.5)
+              : Transform.rotate(
+                  angle: course * math.pi / 180,
+                  child: const CustomPaint(
+                    size: Size.square(36),
+                    painter: _TravelArrowPainter(),
+                  ),
+                ),
+        ),
       ),
-      child: const Center(
-        child: _PinDisc(color: _locationBlue, size: 17, borderWidth: 2.5),
-      ),
-    ),
-  );
+    );
+  }
+}
+
+class _TravelArrowPainter extends CustomPainter {
+  const _TravelArrowPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final arrow = Path()
+      ..moveTo(0, -15)
+      ..lineTo(12, 12)
+      ..lineTo(0, 8)
+      ..lineTo(-12, 12)
+      ..close();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.drawShadow(arrow, Colors.black45, 2, true);
+    canvas.drawPath(arrow, Paint()..color = _UserLocationMarker._arrowBlue);
+    canvas.drawPath(
+      arrow,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = 2.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TravelArrowPainter oldDelegate) => false;
 }
 
 class OsmAttribution extends StatelessWidget {

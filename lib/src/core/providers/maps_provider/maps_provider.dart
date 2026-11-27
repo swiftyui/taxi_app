@@ -5,6 +5,7 @@ import 'package:TaxiApp/src/core/models/taxi_journey.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/providers/user_location_provider/user_location_provider.dart';
+import 'package:TaxiApp/src/core/services/journey_bearing.dart';
 import 'package:TaxiApp/src/core/services/taxi_routing_service.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/widgets/hamba_map.dart';
@@ -38,6 +39,8 @@ class MapsProvider extends GetxController {
   double journeyPreviewPanelHeight = 0;
   double journeyGuidancePanelHeight = 0;
   bool _followingJourney = false;
+  JourneyBearing? _journeyBearing;
+  final RxnDouble journeyBearing = RxnDouble();
 
   Future<void> updateMarkers({bool fitCamera = true}) async {
     final actions = ActionsProvider.create();
@@ -374,14 +377,34 @@ class MapsProvider extends GetxController {
 
   void startFollowingJourney() {
     _followingJourney = true;
-    followJourneyLocation(zoomIn: true);
+    _journeyBearing ??= JourneyBearing();
+    updateJourneyLocation(zoomIn: true);
   }
 
   void stopFollowingJourney() => _followingJourney = false;
 
-  void followJourneyLocation({bool zoomIn = false}) {
+  void endJourneyCamera() {
+    stopFollowingJourney();
+    if (_journeyBearing != null) {
+      _journeyBearing = null;
+      journeyBearing.value = null;
+      mapController.rotate(0);
+    }
+  }
+
+  void updateJourneyLocation({bool zoomIn = false}) {
+    final tracker = _journeyBearing;
     final position = UserLocationProvider.create().userLocation.value;
-    if (!_followingJourney || position == null) {
+    if (tracker == null || position == null) {
+      return;
+    }
+    final actions = ActionsProvider.create();
+    final route = actions.journey.value?.steps
+        .skip(actions.activeJourneyStepIndex)
+        .expand((step) => step.path);
+    final bearing = tracker.update(position, route: route ?? const []);
+    journeyBearing.value = bearing;
+    if (!_followingJourney) {
       return;
     }
     final camera = mapController.camera;
@@ -394,11 +417,18 @@ class MapsProvider extends GetxController {
     final visibleHeight = mapHeight - panelHeight;
     // Leave room to see the route ahead above the location marker.
     final locationOffset = visibleHeight * .58 - mapHeight / 2;
-    mapController.move(
+    final rotation = -(bearing ?? 0.0);
+    final point = camera.projectAtZoom(
       LatLng(position.latitude, position.longitude),
       zoom,
-      offset: Offset(0, locationOffset),
     );
+    final center = camera.unprojectAtZoom(
+      camera
+          .withRotation(rotation)
+          .rotatePoint(point, point - Offset(0, locationOffset)),
+      zoom,
+    );
+    mapController.moveAndRotate(center, zoom, rotation);
   }
 
   Future<void> moveToMyLocation() async {

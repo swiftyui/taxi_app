@@ -35,7 +35,7 @@ class _LandingScreenState extends State<LandingScreen> {
     _locationWorker = ever(_userLocationProvider.userLocation, (_) {
       _centerOnInitialLocation();
       if (_mapReady) {
-        _mapsProvider.followJourneyLocation();
+        _mapsProvider.updateJourneyLocation();
       }
     });
     _actionWorker = ever(_actionsProvider.selectedAction, _updateJourneyCamera);
@@ -57,9 +57,14 @@ class _LandingScreenState extends State<LandingScreen> {
       return;
     }
     if (action == ActionType.journeyStarted) {
-      _mapsProvider.startFollowingJourney();
+      // The first progress update can skip a pickup leg that is already complete.
+      Future<void>.microtask(() {
+        if (mounted && _actionsProvider.selectedAction.value == action) {
+          _mapsProvider.startFollowingJourney();
+        }
+      });
     } else {
-      _mapsProvider.stopFollowingJourney();
+      _mapsProvider.endJourneyCamera();
     }
   }
 
@@ -87,6 +92,8 @@ class _LandingScreenState extends State<LandingScreen> {
   Widget build(BuildContext context) => Obx(() {
     _mapsProvider.mapVersion.value;
     final location = _userLocationProvider.userLocation.value;
+    final guiding =
+        _actionsProvider.selectedAction.value == ActionType.journeyStarted;
     return Scaffold(
       body: Stack(
         alignment: Alignment.center,
@@ -98,6 +105,9 @@ class _LandingScreenState extends State<LandingScreen> {
             markers: _mapsProvider.markers,
             paths: _mapsProvider.paths,
             routeBadges: _mapsProvider.routeBadges,
+            locationBearing: guiding
+                ? _mapsProvider.journeyBearing.value ?? 0
+                : null,
             showAttribution: false,
             userLocation: location == null
                 ? null
