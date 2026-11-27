@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/models/taxi_journey.dart';
@@ -34,24 +36,26 @@ class JourneyDetailsWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  destination?.label ?? Get.appLocalizations.whereDoYouWantToGo,
-                  style: Get.textTheme.titleMedium?.copyWith(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
+          if (!previewing)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    destination?.label ??
+                        Get.appLocalizations.whereDoYouWantToGo,
+                    style: Get.textTheme.titleMedium?.copyWith(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              IconButton(
-                onPressed: _actionsProvider.clearJourney,
-                icon: const Icon(Icons.close),
-                tooltip: 'Close journey',
-              ),
-            ],
-          ),
+                IconButton(
+                  onPressed: _actionsProvider.clearJourney,
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Close journey',
+                ),
+              ],
+            ),
           if (_actionsProvider.isPlanningJourney.value) ...[
             const LinearProgressIndicator(color: Colours.yellow),
             Text(
@@ -69,7 +73,7 @@ class JourneyDetailsWidget extends StatelessWidget {
             ),
           ] else if (journey != null) ...[
             if (previewing)
-              _JourneyPreview(
+              _JourneyPreviewDetails(
                 journey: journey,
                 options: _actionsProvider.journeyOptions,
                 onSelect: _actionsProvider.selectJourneyOption,
@@ -145,24 +149,18 @@ class JourneyDetailsWidget extends StatelessWidget {
                       '${leg.route.properties.destname}',
                 ),
               ),
-            PrimaryButton(
-              text: switch (_actionsProvider.selectedAction.value) {
-                ActionType.journeyStarted =>
-                  Get.appLocalizations.journeyInProgress,
-                ActionType.journeyCompleted =>
-                  Get.appLocalizations.journeyComplete,
-                _ => Get.appLocalizations.startJourney,
-              },
-              icon: const Icon(Icons.navigation, color: Colors.white),
-              buttonColor: Colours.primaryOne,
-              borderColor: Colours.primaryOne,
-              enabled:
-                  _actionsProvider.selectedAction.value !=
-                      ActionType.journeyStarted &&
-                  _actionsProvider.selectedAction.value !=
-                      ActionType.journeyCompleted,
-              onTap: _actionsProvider.startJourney,
-            ),
+            if (!previewing)
+              PrimaryButton(
+                text:
+                    _actionsProvider.selectedAction.value ==
+                        ActionType.journeyCompleted
+                    ? Get.appLocalizations.journeyComplete
+                    : Get.appLocalizations.journeyInProgress,
+                icon: const Icon(Icons.navigation, color: Colors.white),
+                buttonColor: Colours.primaryOne,
+                borderColor: Colours.primaryOne,
+                enabled: false,
+              ),
             _JourneySafetyAction(
               onTap: () => Get.toNamed<void>(AppRoutes.safetyToolkit.value),
             ).paddingOnly(top: Dimensions.eight),
@@ -180,8 +178,144 @@ String _journeyType(TaxiJourney journey) => journey.transferCount == 0
     : '${journey.transferCount} taxi transfer'
           '${journey.transferCount == 1 ? '' : 's'}';
 
-class _JourneyPreview extends StatelessWidget {
-  const _JourneyPreview({
+class JourneyPreviewHeader extends StatelessWidget {
+  const JourneyPreviewHeader({
+    required this.journey,
+    required this.recommended,
+    required this.dragHandle,
+    required this.onStart,
+    required this.onClose,
+    super.key,
+  });
+
+  final TaxiJourney journey;
+  final bool recommended;
+  final Widget dragHandle;
+  final VoidCallback onStart;
+  final VoidCallback onClose;
+
+  static const double _handleHeight = 24;
+  static const double _metricsHeight = 43;
+  static const double _destinationHeight = 25;
+  static const double _tripTypeHeight = 19;
+  static const double _buttonGap = 10;
+  static const double _buttonHeight = 50;
+
+  static double _bottomPadding(BuildContext context) =>
+      math.max(12, MediaQuery.viewPaddingOf(context).bottom + 4);
+
+  static double heightFor(BuildContext context) =>
+      _handleHeight +
+      _metricsHeight +
+      _destinationHeight +
+      _tripTypeHeight +
+      _buttonGap +
+      _buttonHeight +
+      _bottomPadding(context);
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: heightFor(context),
+    child: ColoredBox(
+      color: Colors.white,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 0, 16, _bottomPadding(context)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: _handleHeight,
+              child: Center(child: dragHandle),
+            ),
+            SizedBox(
+              height: _metricsHeight,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '≈ ${journey.estimatedTravelMinutes} min',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colours.primaryOne,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    TaxiRoutingService.formatDistance(
+                      journey.totalDistanceMeters,
+                    ),
+                    style: const TextStyle(
+                      color: Colours.charcoalLight,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    tooltip: 'Close journey',
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: _destinationHeight,
+              child: Text(
+                journey.destination.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colours.primaryOne,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            SizedBox(
+              height: _tripTypeHeight,
+              child: Text(
+                '${recommended ? 'Recommended · ' : ''}${_journeyType(journey)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colours.charcoalLight,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: _buttonGap),
+            SizedBox(
+              height: _buttonHeight,
+              child: FilledButton.icon(
+                onPressed: onStart,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colours.journeyPurple,
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                icon: const Icon(Icons.navigation_rounded, size: 19),
+                label: Text(Get.appLocalizations.startJourney),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _JourneyPreviewDetails extends StatelessWidget {
+  const _JourneyPreviewDetails({
     required this.journey,
     required this.options,
     required this.onSelect,
@@ -192,73 +326,41 @@ class _JourneyPreview extends StatelessWidget {
   final ValueChanged<TaxiJourney> onSelect;
 
   @override
-  Widget build(BuildContext context) {
-    final recommended = options.isNotEmpty && options.first == journey;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Dimensions.twelve),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(
+      top: Dimensions.four,
+      bottom: Dimensions.twelve,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Travel estimate excludes traffic and taxi wait time.',
+          style: TextStyle(color: Colours.charcoalLight, fontSize: 11),
+        ),
+        if (options.length > 1) ...[
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: Dimensions.eight,
+            runSpacing: Dimensions.four,
             children: [
-              Expanded(
-                child: Text(
-                  '≈ ${journey.estimatedTravelMinutes} min',
-                  style: const TextStyle(
-                    color: Colours.journeyPurple,
-                    fontSize: 23,
-                    fontWeight: FontWeight.w800,
-                    height: 1.1,
+              for (final (index, option) in options.indexed)
+                ChoiceChip(
+                  label: Text(
+                    index == 0 ? 'Recommended' : 'Route ${index + 1}',
                   ),
+                  selected: option == journey,
+                  selectedColor: const Color(0xFFEDE2FC),
+                  labelStyle: const TextStyle(color: Colours.primaryOne),
+                  checkmarkColor: Colours.journeyPurple,
+                  onSelected: (_) => onSelect(option),
                 ),
-              ),
-              Text(
-                TaxiRoutingService.formatDistance(journey.totalDistanceMeters),
-                style: const TextStyle(
-                  color: Colours.charcoal,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 5),
-          Text(
-            '${recommended ? 'Recommended · ' : ''}${_journeyType(journey)}',
-            style: const TextStyle(
-              color: Colours.charcoal,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 5),
-          const Text(
-            'Travel estimate excludes traffic and taxi wait time.',
-            style: TextStyle(color: Colours.charcoalLight, fontSize: 11),
-          ),
-          if (options.length > 1) ...[
-            const SizedBox(height: 7),
-            Wrap(
-              spacing: Dimensions.eight,
-              runSpacing: Dimensions.four,
-              children: [
-                for (final (index, option) in options.indexed)
-                  ChoiceChip(
-                    label: Text(
-                      index == 0 ? 'Recommended' : 'Route ${index + 1}',
-                    ),
-                    selected: option == journey,
-                    selectedColor: const Color(0xFFEDE2FC),
-                    onSelected: (_) => onSelect(option),
-                  ),
-              ],
-            ),
-          ],
         ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
 }
 
 class _JourneySafetyAction extends StatelessWidget {

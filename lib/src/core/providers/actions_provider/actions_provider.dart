@@ -239,7 +239,8 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
 
   void startJourney() {
     final activeJourney = journey.value;
-    if (activeJourney == null) {
+    if (activeJourney == null ||
+        selectedAction.value != ActionType.journeyReady) {
       return;
     }
     activeJourneyStepIndex.value = 0;

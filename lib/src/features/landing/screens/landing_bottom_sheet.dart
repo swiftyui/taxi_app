@@ -22,45 +22,70 @@ class LandingBottomSheet extends StatelessWidget {
       FavoriteRoutesProvider.create();
 
   @override
-  Widget build(BuildContext context) => DraggableScrollableSheet(
-    initialChildSize: 0.15,
-    minChildSize: 0.15,
-    maxChildSize: 0.85,
-    snap: true,
-    snapSizes: const [0.15, 0.45, 0.85],
-    builder: (context, scrollController) => Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(Dimensions.sixteen),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 2,
-            offset: const Offset(0, -5),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => Obx(() {
+      final journey =
+          _actionsProvider.selectedAction.value == ActionType.journeyReady
+          ? _actionsProvider.journey.value
+          : null;
+      final recommended =
+          journey != null &&
+          _actionsProvider.journeyOptions.firstOrNull == journey;
+      final maxSize = journey == null ? 0.85 : 0.80;
+      final collapsedSize = journey == null
+          ? 0.15
+          : (JourneyPreviewHeader.heightFor(context) / constraints.maxHeight)
+                .clamp(0.15, maxSize);
+
+      return DraggableScrollableSheet(
+        key: ValueKey(journey != null),
+        initialChildSize: collapsedSize,
+        minChildSize: collapsedSize,
+        maxChildSize: maxSize,
+        snap: true,
+        snapSizes: [if (collapsedSize < 0.45) 0.45],
+        builder: (context, scrollController) => Container(
+          width: double.infinity,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(journey != null ? 24 : Dimensions.sixteen),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 2,
+                offset: const Offset(0, -5),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Obx(
-        () => SingleChildScrollView(
-          controller: scrollController,
-          padding: EdgeInsets.zero,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: _dragHandle,
-              ).paddingOnly(top: Dimensions.sixteen, bottom: Dimensions.eight),
-              _buildBottomSheetContent,
+          child: CustomScrollView(
+            controller: scrollController,
+            slivers: [
+              if (journey != null)
+                PinnedHeaderSliver(
+                  child: JourneyPreviewHeader(
+                    journey: journey,
+                    recommended: recommended,
+                    dragHandle: _dragHandle,
+                    onStart: _actionsProvider.startJourney,
+                    onClose: _actionsProvider.clearJourney,
+                  ),
+                )
+              else
+                SliverToBoxAdapter(
+                  child: Center(child: _dragHandle).paddingOnly(
+                    top: Dimensions.sixteen,
+                    bottom: Dimensions.eight,
+                  ),
+                ),
+              SliverToBoxAdapter(child: Obx(() => _buildBottomSheetContent)),
             ],
           ),
         ),
-      ),
-    ),
+      );
+    }),
   );
 
   Widget get _dragHandle => Container(

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/models/taxi_journey.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
@@ -33,6 +35,7 @@ class MapsProvider extends GetxController {
   final List<HambaMapMarker> markers = [];
   final List<HambaMapPath> paths = [];
   final List<HambaMapRouteBadge> routeBadges = [];
+  double journeyPreviewPanelHeight = 0;
 
   Future<void> updateMarkers({bool fitCamera = true}) async {
     final actions = ActionsProvider.create();
@@ -153,7 +156,7 @@ class MapsProvider extends GetxController {
               ),
           ]);
           if (fitCamera) {
-            _fitJourney(journey, options);
+            _fitJourney(journey, options, previewing: previewing);
           }
           if (previewing) {
             _addRouteBadges(journey, options, actions);
@@ -203,7 +206,7 @@ class MapsProvider extends GetxController {
       8,
       size.height * .18,
       size.width - 8,
-      size.height * .84,
+      math.min(size.height * .84, size.height - journeyPreviewPanelHeight - 8),
     );
     final occupiedAreas = [
       Rect.fromCenter(
@@ -329,17 +332,21 @@ class MapsProvider extends GetxController {
     return active ? width + 1.5 : width;
   }
 
-  void _fitJourney(TaxiJourney journey, List<TaxiJourney> options) {
+  void _fitJourney(
+    TaxiJourney journey,
+    List<TaxiJourney> options, {
+    required bool previewing,
+  }) {
     final user = UserLocationProvider.create().userLocation.value;
     _fitPoints([
       if (user != null) LatLng(user.latitude, user.longitude),
       for (final option in options)
         for (final step in option.steps) ...step.path,
       journey.destination.position,
-    ]);
+    ], bottomPadding: previewing ? journeyPreviewPanelHeight + 16 : 0);
   }
 
-  void _fitPoints(List<LatLng> points) {
+  void _fitPoints(List<LatLng> points, {double bottomPadding = 0}) {
     if (points.isEmpty) {
       return;
     }
@@ -352,7 +359,12 @@ class MapsProvider extends GetxController {
       CameraFit.coordinates(
         coordinates: points,
         maxZoom: 17,
-        padding: EdgeInsets.fromLTRB(48, height * .17, 48, height * .19),
+        padding: EdgeInsets.fromLTRB(
+          48,
+          height * .17,
+          48,
+          math.max(height * .19, math.min(bottomPadding, height * .72)),
+        ),
       ),
     );
   }

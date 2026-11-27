@@ -4,6 +4,7 @@ import 'package:TaxiApp/src/core/widgets/hamba_map.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_bottom_sheet.dart';
 import 'package:TaxiApp/src/features/landing/screens/landing_search_bar.dart';
+import 'package:TaxiApp/src/features/landing/widgets/journey_details_widget.dart';
 import 'package:TaxiApp/src/features/landing/widgets/my_location_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -30,6 +31,14 @@ class _LandingScreenState extends State<LandingScreen> {
     _locationWorker = ever(
       _userLocationProvider.userLocation,
       (_) => _centerOnInitialLocation(),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _mapsProvider.journeyPreviewPanelHeight = JourneyPreviewHeader.heightFor(
+      context,
     );
   }
 
