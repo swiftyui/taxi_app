@@ -57,6 +57,7 @@ class LandingBottomSheet extends StatelessWidget {
         initialChildSize: collapsedSize,
         minChildSize: collapsedSize,
         maxChildSize: maxSize,
+        expand: false,
         snap: true,
         snapSizes: [if (collapsedSize < 0.45) 0.45],
         builder: (context, scrollController) => Container(

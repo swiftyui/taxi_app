@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:TaxiApp/src/core/enums/action_type.dart';
 import 'package:TaxiApp/src/core/providers/actions_provider/actions_provider.dart';
 import 'package:TaxiApp/src/core/providers/maps_provider/maps_provider.dart';
@@ -135,34 +137,90 @@ class _LandingScreenState extends State<LandingScreen> {
             },
             onMapGesture: _mapsProvider.stopFollowingJourney,
           ),
-          NotificationListener<DraggableScrollableNotification>(
-            onNotification: _onJourneySheetResized,
-            child: LandingBottomSheet(),
-          ),
-          Align(
-            alignment: Alignment.topCenter,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(child: LandingSearchBar()),
-                        MyLocationButton().paddingOnly(left: Dimensions.eight),
-                      ],
-                    ),
-                    const SizedBox(height: Dimensions.eight),
-                    const OsmAttribution(includeVectorCredits: true),
-                  ],
+          Positioned.fill(
+            child: CustomMultiChildLayout(
+              delegate: _LandingMapOverlayLayout(MediaQuery.paddingOf(context)),
+              children: [
+                LayoutId(
+                  id: _LandingMapOverlay.panel,
+                  child: NotificationListener<DraggableScrollableNotification>(
+                    onNotification: _onJourneySheetResized,
+                    child: LandingBottomSheet(),
+                  ),
                 ),
-              ),
+                LayoutId(
+                  id: _LandingMapOverlay.controls,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Row(
+                        children: [
+                          const Expanded(child: LandingSearchBar()),
+                          MyLocationButton().paddingOnly(
+                            left: Dimensions.eight,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                LayoutId(
+                  id: _LandingMapOverlay.credits,
+                  child: const OsmAttribution(includeVectorCredits: true),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   });
+}
+
+enum _LandingMapOverlay { panel, controls, credits }
+
+class _LandingMapOverlayLayout extends MultiChildLayoutDelegate {
+  _LandingMapOverlayLayout(this.safePadding);
+
+  final EdgeInsets safePadding;
+
+  @override
+  void performLayout(Size size) {
+    final fullWidth = BoxConstraints(
+      minWidth: size.width,
+      maxWidth: size.width,
+      maxHeight: size.height,
+    );
+    final panel = layoutChild(_LandingMapOverlay.panel, fullWidth);
+    final panelTop = size.height - panel.height;
+    positionChild(_LandingMapOverlay.panel, Offset(0, panelTop));
+
+    final controls = layoutChild(_LandingMapOverlay.controls, fullWidth);
+    positionChild(_LandingMapOverlay.controls, Offset.zero);
+
+    const inset = 16.0;
+    final credits = layoutChild(
+      _LandingMapOverlay.credits,
+      BoxConstraints.loose(
+        Size(
+          math.max(0.0, size.width - safePadding.horizontal - 2 * inset),
+          size.height,
+        ),
+      ),
+    );
+    final bottomAlignedTop = panelTop - credits.height;
+    final creditTop = bottomAlignedTop >= controls.height
+        ? math.max(controls.height, bottomAlignedTop - 6)
+        // A tall panel can leave too little space below the top controls.
+        : safePadding.top;
+    positionChild(
+      _LandingMapOverlay.credits,
+      Offset(size.width - safePadding.right - inset - credits.width, creditTop),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_LandingMapOverlayLayout oldDelegate) =>
+      safePadding != oldDelegate.safePadding;
 }
