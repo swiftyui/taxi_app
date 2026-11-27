@@ -10,4 +10,9 @@ class DestinationSearchResult {
   final String label;
   final String subtitle;
   final LatLng position;
+
+  String get searchIdentity =>
+      '${label.trim().toLowerCase()}|'
+      '${position.latitude.toStringAsFixed(5)}|'
+      '${position.longitude.toStringAsFixed(5)}';
 }

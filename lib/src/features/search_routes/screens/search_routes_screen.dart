@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:TaxiApp/src/core/extensions/get_extensions.dart';
 import 'package:TaxiApp/src/core/models/destination_search_result.dart';
 import 'package:TaxiApp/src/core/providers/taxi_routes_provider/taxi_routes_provider.dart';
 import 'package:TaxiApp/src/core/providers/saved_places_provider/saved_places_provider.dart';
 import 'package:TaxiApp/src/core/models/saved_place.dart';
+import 'package:TaxiApp/src/core/services/destination_query.dart';
+import 'package:TaxiApp/src/core/services/destination_search_history.dart';
 import 'package:TaxiApp/src/core/services/destination_search_service.dart';
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:TaxiApp/src/core/theme/constants/dimensions.dart';
@@ -20,11 +24,15 @@ class SearchRoutesScreen extends StatefulWidget {
 }
 
 class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
+  static final _searchService = DestinationSearchService();
+  static final _history = DestinationSearchHistory();
   final TaxiRoutesProvider _taxiRoutesProvider = TaxiRoutesProvider.create();
   final SavedPlacesProvider _savedPlacesProvider = SavedPlacesProvider.create();
-  final DestinationSearchService _searchService = DestinationSearchService();
+  final RxList<RecentDestinationSearch> _recentSearches =
+      <RecentDestinationSearch>[].obs;
   final RxList<DestinationSearchResult> _results =
       <DestinationSearchResult>[].obs;
+  final RxString _query = ''.obs;
   final RxBool _isSearching = false.obs;
   final RxBool _hasSubmittedSearch = false.obs;
   final RxnString _errorMessage = RxnString();
@@ -33,14 +41,21 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
   int _searchGeneration = 0;
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(_showHistory(_history.load()));
+  }
+
+  @override
   void dispose() {
     _searchGeneration++;
     _searchController.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged(String _) {
+  void _onSearchChanged(String value) {
     _searchGeneration++;
+    _query.value = value;
     _results.clear();
     _errorMessage.value = null;
     _isSearching.value = false;
@@ -49,7 +64,7 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
 
   Future<void> _search(String value) async {
     final query = value.trim();
-    if (query.length < 3 || _isSearching.value) {
+    if (DestinationQuery.normalize(query).length < 3 || _isSearching.value) {
       return;
     }
     FocusScope.of(context).unfocus();
@@ -57,11 +72,12 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
     _isSearching.value = true;
     _hasSubmittedSearch.value = true;
     _errorMessage.value = null;
+    unawaited(_showHistory(_history.record(query)));
 
     try {
       final results = await _searchService.search(
         query: query,
-        taxiRoutes: _taxiRoutesProvider.taxiRoutes,
+        localResults: _suggestions(query),
       );
       if (generation == _searchGeneration) {
         _results.assignAll(results);
@@ -76,6 +92,48 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
         _isSearching.value = false;
       }
     }
+  }
+
+  List<DestinationSearchResult> _suggestions(String query) =>
+      _searchService.suggestions(
+        query: query,
+        taxiRoutes: _taxiRoutesProvider.taxiRoutes,
+        savedPlaces: _savedPlacesProvider.places.map(
+          (place) => place.destination,
+        ),
+        recentSearches: _recentSearches,
+      );
+
+  Future<void> _showHistory(
+    Future<List<RecentDestinationSearch>> update,
+  ) async {
+    final entries = await update;
+    if (mounted) {
+      _recentSearches.assignAll(entries);
+    }
+  }
+
+  void _select(DestinationSearchResult result, {String? query}) {
+    unawaited(
+      _history.record(
+        query ?? (_hasSubmittedSearch.value ? _query.value : result.label),
+        destination: result,
+      ),
+    );
+    Get.back(result: result);
+  }
+
+  void _selectRecent(RecentDestinationSearch entry) {
+    if (entry.destination case final place?) {
+      _select(place, query: entry.query);
+      return;
+    }
+    _searchController.value = TextEditingValue(
+      text: entry.query,
+      selection: TextSelection.collapsed(offset: entry.query.length),
+    );
+    _onSearchChanged(entry.query);
+    unawaited(_search(entry.query));
   }
 
   @override
@@ -112,11 +170,13 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
                     onChanged: _onSearchChanged,
                     onSubmitted: _search,
                     textInputAction: TextInputAction.search,
+                    maxLength: 160,
                     style: Get.textTheme.labelLarge?.copyWith(
                       color: Colors.black,
                     ),
                     decoration: InputDecoration(
                       hintText: Get.appLocalizations.searchDestination,
+                      counterText: '',
                       border: InputBorder.none,
                       enabledBorder: const OutlineInputBorder(
                         borderSide: BorderSide.none,
@@ -127,6 +187,22 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
                     ),
                   ),
                 ),
+                Obx(() {
+                  if (_query.value.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return IconButton(
+                    onPressed: () {
+                      _searchController.clear();
+                      _onSearchChanged('');
+                    },
+                    tooltip: Get.appLocalizations.clearDestinationSearch,
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: Colours.charcoalLight,
+                    ),
+                  );
+                }),
                 IconButton(
                   onPressed: () => _search(_searchController.text),
                   tooltip: 'Search',
@@ -135,109 +211,154 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
               ],
             ),
           ).paddingSymmetric(horizontal: Dimensions.sixteen),
-          Expanded(
-            child: Obx(() {
-              if (_isSearching.value) {
-                return const SearchRoutesShimmer();
-              }
-              final error = _errorMessage.value;
-              if (error != null) {
-                return _SearchMessage(
-                  icon: Icons.cloud_off_rounded,
-                  title: 'Search unavailable',
-                  message: error,
-                  actionLabel: 'Dismiss',
-                  onAction: () => _errorMessage.value = null,
-                );
-              }
-              if (_results.isEmpty) {
-                if (!_hasSubmittedSearch.value &&
-                    _savedPlacesProvider.places.isNotEmpty) {
-                  return _SavedPlaceSuggestions(
-                    places: _savedPlacesProvider.places,
-                    onSelected: (place) => Get.back(result: place.destination),
-                  );
-                }
-                return _SearchMessage(
-                  icon: !_hasSubmittedSearch.value
-                      ? Icons.travel_explore_rounded
-                      : Icons.location_off_outlined,
-                  title: !_hasSubmittedSearch.value
-                      ? 'Where are you heading?'
-                      : 'No destinations found',
-                  message: !_hasSubmittedSearch.value
-                      ? 'Enter at least three characters, then tap Search.'
-                      : Get.appLocalizations.noDestinationsFound,
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                itemCount: _results.length,
-                itemBuilder: (context, index) {
-                  final result = _results[index];
-                  return _SearchResultCard(
-                    result: result,
-                    onTap: () => Get.back(result: result),
-                  );
-                },
-              );
-            }),
-          ),
+          Expanded(child: Obx(_buildSearchBody)),
         ],
       ),
     ),
   );
-}
 
-class _SavedPlaceSuggestions extends StatelessWidget {
-  const _SavedPlaceSuggestions({
-    required this.places,
-    required this.onSelected,
-  });
+  Widget _buildSearchBody() {
+    final query = _query.value.trim();
+    final l10n = Get.appLocalizations;
+    if (query.isEmpty) {
+      final places = _savedPlacesProvider.places.toList();
+      final recent = _recentSearches.toList();
+      if (places.isEmpty && recent.isEmpty) {
+        return _SearchMessage(
+          icon: Icons.travel_explore_rounded,
+          title: 'Where are you heading?',
+          message: l10n.searchAtLeastThreeCharacters,
+        );
+      }
+      return _searchList([
+        if (places.isNotEmpty) ...[
+          _sectionHeading('Saved places'),
+          for (final place in places)
+            _destinationCard(
+              place.destination,
+              icon: switch (place.type) {
+                SavedPlaceType.home => Icons.home_rounded,
+                SavedPlaceType.work => Icons.work_rounded,
+                SavedPlaceType.custom => Icons.star_rounded,
+              },
+            ),
+        ],
+        if (recent.isNotEmpty) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(child: _sectionHeading(l10n.recentDestinationSearches)),
+              TextButton(
+                onPressed: () => _showHistory(_history.clear()),
+                child: Text(l10n.clearDestinationHistory),
+              ),
+            ],
+          ),
+          for (final entry in recent) _recentCard(entry),
+        ],
+      ]);
+    }
 
-  final List<SavedPlace> places;
-  final ValueChanged<SavedPlace> onSelected;
+    final submitted = _hasSubmittedSearch.value;
+    final searching = _isSearching.value;
+    final results = _results.toList();
+    final matches = results.isEmpty ? _suggestions(query) : results;
+    final matcher = DestinationQuery(query);
+    final pastQueries = submitted || matcher.normalized.length < 2
+        ? const <RecentDestinationSearch>[]
+        : _recentSearches
+              .where(
+                (entry) =>
+                    entry.destination == null &&
+                    matcher.score(entry.query) != null,
+              )
+              .take(4)
+              .toList();
+    if (matches.isNotEmpty || pastQueries.isNotEmpty) {
+      return _searchList([
+        if (searching) const LinearProgressIndicator(),
+        if (matches.isNotEmpty) ...[
+          if (results.isEmpty) _sectionHeading(l10n.destinationSuggestions),
+          for (final match in matches) _destinationCard(match),
+        ],
+        if (pastQueries.isNotEmpty) ...[
+          _sectionHeading(l10n.recentDestinationSearches),
+          for (final entry in pastQueries) _recentCard(entry),
+        ],
+      ]);
+    }
+    if (searching) {
+      return const SearchRoutesShimmer();
+    }
+    final error = _errorMessage.value;
+    if (error != null) {
+      return _SearchMessage(
+        icon: Icons.cloud_off_rounded,
+        title: 'Search unavailable',
+        message: error,
+        actionLabel: l10n.tryAgain,
+        onAction: () => _search(query),
+      );
+    }
+    return _SearchMessage(
+      icon: submitted
+          ? Icons.location_off_outlined
+          : Icons.travel_explore_rounded,
+      title: submitted ? 'No destinations found' : 'Where are you heading?',
+      message: submitted
+          ? l10n.noDestinationsFound
+          : matcher.normalized.length < 3
+          ? l10n.searchAtLeastThreeCharacters
+          : l10n.submitDestinationSearch,
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-    children: [
-      const Text(
-        'Saved places',
-        style: TextStyle(
-          color: Colours.primaryOne,
-          fontSize: 14,
-          fontWeight: FontWeight.w800,
-        ),
+  Widget _searchList(List<Widget> children) => ListView(
+    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+    children: children,
+  );
+
+  Widget _sectionHeading(String title) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Text(
+      title,
+      style: const TextStyle(
+        color: Colours.primaryOne,
+        fontSize: 14,
+        fontWeight: FontWeight.w800,
       ),
-      const Text(
-        'Start a journey with one tap',
-        style: TextStyle(color: Colours.charcoalLight, fontSize: 10),
-      ),
-      const SizedBox(height: 10),
-      for (final place in places)
-        _SearchResultCard(
-          result: place.destination,
-          icon: switch (place.type) {
-            SavedPlaceType.home => Icons.home_rounded,
-            SavedPlaceType.work => Icons.work_rounded,
-            SavedPlaceType.custom => Icons.star_rounded,
-          },
-          onTap: () => onSelected(place),
-        ),
-    ],
+    ),
+  );
+
+  Widget _destinationCard(
+    DestinationSearchResult result, {
+    IconData icon = Icons.location_on_rounded,
+  }) => _SearchResultCard(
+    label: result.label,
+    subtitle: result.subtitle,
+    icon: icon,
+    onTap: () => _select(result),
+  );
+
+  Widget _recentCard(RecentDestinationSearch entry) => _SearchResultCard(
+    label: entry.destination?.label ?? entry.query,
+    subtitle: entry.destination?.subtitle ?? '',
+    icon: Icons.history_rounded,
+    onTap: () => _selectRecent(entry),
   );
 }
 
 class _SearchResultCard extends StatelessWidget {
   const _SearchResultCard({
-    required this.result,
+    required this.label,
     required this.onTap,
-    this.icon = Icons.location_on_rounded,
+    required this.icon,
+    this.subtitle = '',
   });
 
-  final DestinationSearchResult result;
+  final String label;
+  final String subtitle;
   final VoidCallback onTap;
   final IconData icon;
 
@@ -286,7 +407,7 @@ class _SearchResultCard extends StatelessWidget {
                   child: Icon(icon, color: Colours.blueThree, size: 21),
                 ),
                 title: Text(
-                  result.label,
+                  label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -295,10 +416,10 @@ class _SearchResultCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                subtitle: result.subtitle.isEmpty
+                subtitle: subtitle.isEmpty
                     ? null
                     : Text(
-                        result.subtitle,
+                        subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(

@@ -160,6 +160,11 @@
     "@searchDestination": {
         "description": "Destination search field hint"
     },
+    "destinationSuggestions": "Suggestions",
+    "recentDestinationSearches": "Recent searches",
+    "clearDestinationHistory": "Clear history",
+    "clearDestinationSearch": "Clear search",
+    "submitDestinationSearch": "Tap Search to look up this destination.",
     "searchAtLeastThreeCharacters": "Enter at least 3 characters to search.",
     "@searchAtLeastThreeCharacters": {
         "description": "Minimum destination search length"

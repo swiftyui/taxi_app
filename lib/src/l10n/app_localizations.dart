@@ -334,6 +334,36 @@ abstract class AppLocalizations {
   /// **'Search for a destination'**
   String get searchDestination;
 
+  /// No description provided for @destinationSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get destinationSuggestions;
+
+  /// No description provided for @recentDestinationSearches.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent searches'**
+  String get recentDestinationSearches;
+
+  /// No description provided for @clearDestinationHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear history'**
+  String get clearDestinationHistory;
+
+  /// No description provided for @clearDestinationSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get clearDestinationSearch;
+
+  /// No description provided for @submitDestinationSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Search to look up this destination.'**
+  String get submitDestinationSearch;
+
   /// Minimum destination search length
   ///
   /// In en, this message translates to:

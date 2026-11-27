@@ -137,6 +137,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchDestination => 'Search for a destination';
 
   @override
+  String get destinationSuggestions => 'Suggestions';
+
+  @override
+  String get recentDestinationSearches => 'Recent searches';
+
+  @override
+  String get clearDestinationHistory => 'Clear history';
+
+  @override
+  String get clearDestinationSearch => 'Clear search';
+
+  @override
+  String get submitDestinationSearch =>
+      'Tap Search to look up this destination.';
+
+  @override
   String get searchAtLeastThreeCharacters =>
       'Enter at least 3 characters to search.';
 

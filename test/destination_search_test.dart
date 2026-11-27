@@ -1,0 +1,162 @@
+import 'package:TaxiApp/src/core/models/destination_search_result.dart';
+import 'package:TaxiApp/src/core/models/driver_profile.dart';
+import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/taxi_route_model.dart';
+import 'package:TaxiApp/src/core/services/destination_query.dart';
+import 'package:TaxiApp/src/core/services/destination_search_history.dart';
+import 'package:TaxiApp/src/core/services/destination_search_service.dart';
+import 'package:TaxiApp/src/core/services/osm_geocoding_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const _menlyn = DestinationSearchResult(
+  label: 'Menlyn Park Shopping Centre',
+  subtitle: 'Pretoria',
+  position: LatLng(-25.783, 28.277),
+);
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('matches swapped letters, partial words, and accents', () {
+    expect(
+      DestinationQuery('mabopnae stat').score('Mabopane Station'),
+      isNotNull,
+    );
+    expect(DestinationQuery('Mnel').score(_menlyn.label), isNotNull);
+    expect(
+      DestinationQuery('menlyn pretoria').score('Pretória, Menlyn'),
+      isNotNull,
+    );
+    expect(DestinationQuery('menlyn durban').score('Menlyn Pretoria'), isNull);
+    expect(DestinationQuery('124 Church').score('125 Church Street'), isNull);
+  });
+
+  test(
+    'ranks an exact spelling ahead of a fuzzy match and merges nearby duplicates',
+    () {
+      final geocoding = _GeocodingStub();
+      final service = DestinationSearchService(geocoding: geocoding);
+      final matches = service.suggestions(
+        query: 'Menlyn',
+        taxiRoutes: [
+          _route('Menlym Taxi Rank'),
+          _route('Menlyn Taxi Rank'),
+          _route('Menlyn Taxi Rank', longitude: 28.2771),
+        ],
+        recentSearches: const [
+          RecentDestinationSearch('the mall', destination: _menlyn),
+        ],
+      );
+      expect(matches.map((result) => result.label), [
+        _menlyn.label,
+        'Menlyn Taxi Rank',
+        'Menlym Taxi Rank',
+      ]);
+      expect(
+        service.suggestions(
+          query: 'teh mlal',
+          taxiRoutes: [],
+          recentSearches: const [
+            RecentDestinationSearch('the mall', destination: _menlyn),
+          ],
+        ),
+        [_menlyn],
+      );
+      expect(geocoding.calls, 0);
+    },
+  );
+
+  test(
+    'keeps local matches available when lookup fails and reuses online results',
+    () async {
+      final geocoding = _GeocodingStub()..isOffline = true;
+      final service = DestinationSearchService(geocoding: geocoding);
+      expect(await service.search(query: 'Menlyn', localResults: [_menlyn]), [
+        _menlyn,
+      ]);
+
+      geocoding.isOffline = false;
+      final matches = await service.search(
+        query: 'Menlyn',
+        localResults: [_menlyn],
+      );
+      expect(matches, [_menlyn]);
+      expect(
+        (await service.search(query: 'menlyn')).single.label,
+        _menlyn.label,
+      );
+      expect(geocoding.calls, 2);
+    },
+  );
+
+  test(
+    'persists previous terms and selected destinations with MRU ordering',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'recentSearches': ['Mabopane Station', '{invalid'],
+      });
+      final history = DestinationSearchHistory();
+      await Future.wait([
+        history.record('Menlyn Park'),
+        history.record('Menlyn Park', destination: _menlyn),
+      ]);
+      await history.record('Pretoria Zoo');
+      await history.record('menlyn park');
+
+      final stored = await DestinationSearchHistory().load();
+      expect(stored.map((item) => item.query), [
+        'menlyn park',
+        'Pretoria Zoo',
+        'Mabopane Station',
+      ]);
+      expect(stored.first.destination?.position, _menlyn.position);
+      expect(stored[1].destination, isNull);
+      expect(await history.clear(), isEmpty);
+      expect(await DestinationSearchHistory().load(), isEmpty);
+    },
+  );
+}
+
+class _GeocodingStub extends OsmGeocodingService {
+  int calls = 0;
+  bool isOffline = false;
+
+  @override
+  Future<List<OsmPlace>> search(
+    String query, {
+    String country = 'South Africa',
+  }) async {
+    calls++;
+    if (isOffline) {
+      throw const HttpException('Offline');
+    }
+    return [
+      OsmPlace(
+        label: _menlyn.label,
+        subtitle: _menlyn.subtitle,
+        position: _menlyn.position,
+      ),
+    ];
+  }
+}
+
+TaxiRouteModel _route(String destination, {double longitude = 28.277}) =>
+    TaxiRouteModel.fromDriverRoute(
+      DriverRoute(
+        id: destination,
+        driverId: 'test',
+        originName: 'Start rank',
+        destinationName: destination,
+        origin: const GeoPoint(-25.7, 28.1),
+        destination: GeoPoint(-25.783, longitude),
+        fare: 12,
+        serviceDays: const ['Monday'],
+        departureTime: '08:00',
+        notes: '',
+        associationName: 'Test',
+        seatCapacity: 10,
+        createdAt: null,
+      ),
+    );
