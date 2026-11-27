@@ -28,6 +28,13 @@ not require an API key. Map screens credit OpenStreetMap, OpenMapTiles, and
 OpenFreeMap. Public map services and Nominatim are subject to their providers'
 usage policies and availability.
 
+Live destination suggestions use [Photon](https://photon.komoot.io/) for
+OpenStreetMap place lookup in South Africa. The app waits briefly after typing,
+caches repeated lookups, and displays local suggestions while the request runs.
+Build with `--dart-define=HAMBA_PHOTON_URL=https://your-photon-host/api/` to point
+to your own [Photon instance](https://github.com/komoot/photon). The public
+instance limits heavy use.
+
 ## Journey safety
 
 The Safety Toolkit uses the native share sheet for current journey details and

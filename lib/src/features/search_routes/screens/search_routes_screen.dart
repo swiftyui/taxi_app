@@ -39,6 +39,8 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   int _searchGeneration = 0;
+  Timer? _liveDebounce;
+  Completer<void>? _liveRequest;
 
   @override
   void initState() {
@@ -49,26 +51,73 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
   @override
   void dispose() {
     _searchGeneration++;
+    _cancelLiveLookup();
     _searchController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged(String value) {
-    _searchGeneration++;
+    final generation = ++_searchGeneration;
+    _cancelLiveLookup();
     _query.value = value;
     _results.clear();
     _errorMessage.value = null;
-    _isSearching.value = false;
     _hasSubmittedSearch.value = false;
+    final query = value.trim();
+    final canSearch = DestinationQuery.normalize(query).length >= 3;
+    _isSearching.value = canSearch;
+    if (canSearch) {
+      _liveDebounce = Timer(
+        const Duration(milliseconds: 850),
+        () => unawaited(_lookupSuggestions(query, generation)),
+      );
+    }
+  }
+
+  void _cancelLiveLookup() {
+    _liveDebounce?.cancel();
+    _liveRequest?.complete();
+    _liveRequest = null;
+  }
+
+  Future<void> _lookupSuggestions(String query, int generation) async {
+    final request = Completer<void>();
+    _liveRequest = request;
+    try {
+      final results = await _searchService.liveSuggestions(
+        query,
+        abortTrigger: request.future,
+      );
+      if (generation == _searchGeneration) {
+        _results.assignAll(results);
+      }
+    } on Exception {
+      if (generation == _searchGeneration) {
+        _errorMessage.value =
+            Get.appLocalizations.liveDestinationLookupUnavailable;
+      }
+    } finally {
+      if (generation == _searchGeneration) {
+        _liveRequest = null;
+        _isSearching.value = false;
+      }
+    }
   }
 
   Future<void> _search(String value) async {
     final query = value.trim();
-    if (DestinationQuery.normalize(query).length < 3 || _isSearching.value) {
+    if (DestinationQuery.normalize(query).length < 3 ||
+        (_hasSubmittedSearch.value && _isSearching.value)) {
       return;
     }
     FocusScope.of(context).unfocus();
     final generation = ++_searchGeneration;
+    _cancelLiveLookup();
+    final onScreen = _searchService.mergeSuggestions(
+      query: query,
+      local: _suggestions(query),
+      online: _results,
+    );
     _isSearching.value = true;
     _hasSubmittedSearch.value = true;
     _errorMessage.value = null;
@@ -77,7 +126,7 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
     try {
       final results = await _searchService.search(
         query: query,
-        localResults: _suggestions(query),
+        localResults: onScreen,
       );
       if (generation == _searchGeneration) {
         _results.assignAll(results);
@@ -262,7 +311,13 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
     final submitted = _hasSubmittedSearch.value;
     final searching = _isSearching.value;
     final results = _results.toList();
-    final matches = results.isEmpty ? _suggestions(query) : results;
+    final matches = submitted && !searching
+        ? results
+        : _searchService.mergeSuggestions(
+            query: query,
+            local: _suggestions(query),
+            online: results,
+          );
     final matcher = DestinationQuery(query);
     final pastQueries = submitted || matcher.normalized.length < 2
         ? const <RecentDestinationSearch>[]
@@ -278,7 +333,7 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
       return _searchList([
         if (searching) const LinearProgressIndicator(),
         if (matches.isNotEmpty) ...[
-          if (results.isEmpty) _sectionHeading(l10n.destinationSuggestions),
+          if (!submitted) _sectionHeading(l10n.destinationSuggestions),
           for (final match in matches) _destinationCard(match),
         ],
         if (pastQueries.isNotEmpty) ...[
@@ -297,19 +352,19 @@ class _SearchRoutesScreenState extends State<SearchRoutesScreen> {
         title: 'Search unavailable',
         message: error,
         actionLabel: l10n.tryAgain,
-        onAction: () => _search(query),
+        onAction: () => submitted ? _search(query) : _onSearchChanged(query),
       );
     }
     return _SearchMessage(
-      icon: submitted
+      icon: matcher.normalized.length >= 3
           ? Icons.location_off_outlined
           : Icons.travel_explore_rounded,
-      title: submitted ? 'No destinations found' : 'Where are you heading?',
-      message: submitted
+      title: matcher.normalized.length >= 3
           ? l10n.noDestinationsFound
-          : matcher.normalized.length < 3
-          ? l10n.searchAtLeastThreeCharacters
-          : l10n.submitDestinationSearch,
+          : l10n.whereDoYouWantToGo,
+      message: matcher.normalized.length >= 3
+          ? l10n.adjustDestinationSearch
+          : l10n.searchAtLeastThreeCharacters,
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:TaxiApp/src/core/providers/taxi_routes_provider/models/taxi_rout
 import 'package:TaxiApp/src/core/services/destination_query.dart';
 import 'package:TaxiApp/src/core/services/destination_search_history.dart';
 import 'package:TaxiApp/src/core/services/osm_geocoding_service.dart';
+import 'package:TaxiApp/src/core/services/photon_place_search.dart';
 import 'package:latlong2/latlong.dart';
 
 class DestinationSearchException implements Exception {
@@ -15,11 +16,40 @@ class DestinationSearchException implements Exception {
 }
 
 class DestinationSearchService {
-  DestinationSearchService({OsmGeocodingService? geocoding})
-    : _geocoding = geocoding ?? OsmGeocodingService();
+  DestinationSearchService({
+    OsmGeocodingService? geocoding,
+    PhotonPlaceSearch? photon,
+  }) : _geocoding = geocoding ?? OsmGeocodingService(),
+       _photon = photon ?? PhotonPlaceSearch();
 
   final OsmGeocodingService _geocoding;
+  final PhotonPlaceSearch _photon;
   final _lookups = <String, Future<List<DestinationSearchResult>>>{};
+  final _liveLookups = <String, List<DestinationSearchResult>>{};
+
+  Future<List<DestinationSearchResult>> liveSuggestions(
+    String query, {
+    Future<void>? abortTrigger,
+  }) async {
+    final trimmed = query.trim();
+    if (DestinationQuery.normalize(trimmed).length < 3) {
+      return const [];
+    }
+    final key = trimmed.toLowerCase();
+    final cached = _liveLookups.remove(key);
+    if (cached != null) {
+      _liveLookups[key] = cached;
+      return cached;
+    }
+    final results = List<DestinationSearchResult>.unmodifiable(
+      await _photon.search(trimmed, abortTrigger: abortTrigger),
+    );
+    _liveLookups[key] = results;
+    if (_liveLookups.length > 32) {
+      _liveLookups.remove(_liveLookups.keys.first);
+    }
+    return results;
+  }
 
   List<DestinationSearchResult> suggestions({
     required String query,
@@ -121,17 +151,11 @@ class DestinationSearchService {
 
     try {
       final geocodedResults = await _searchOnline(submitted);
-      return _deduplicate([
-        ...localResults
-            .where(
-              (result) => DestinationQuery.normalize(
-                result.label,
-              ).startsWith(normalizedQuery),
-            )
-            .take(3),
-        ...geocodedResults,
-        ...localResults,
-      ]).toList();
+      return mergeSuggestions(
+        query: submitted,
+        local: localResults,
+        online: geocodedResults,
+      );
     } catch (_) {
       if (localResults.isNotEmpty) {
         return localResults.toList();
@@ -140,6 +164,24 @@ class DestinationSearchService {
         'Destination search is unavailable. Check your connection and retry.',
       );
     }
+  }
+
+  List<DestinationSearchResult> mergeSuggestions({
+    required String query,
+    required Iterable<DestinationSearchResult> local,
+    required Iterable<DestinationSearchResult> online,
+  }) {
+    final normalized = DestinationQuery.normalize(query);
+    return _deduplicate([
+      ...local
+          .where(
+            (result) =>
+                DestinationQuery.normalize(result.label).startsWith(normalized),
+          )
+          .take(3),
+      ...online,
+      ...local,
+    ]).toList();
   }
 
   Future<List<DestinationSearchResult>> _searchOnline(String query) async {

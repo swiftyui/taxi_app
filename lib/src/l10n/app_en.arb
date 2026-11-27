@@ -164,7 +164,8 @@
     "recentDestinationSearches": "Recent searches",
     "clearDestinationHistory": "Clear history",
     "clearDestinationSearch": "Clear search",
-    "submitDestinationSearch": "Tap Search to look up this destination.",
+    "adjustDestinationSearch": "Try another spelling or add a suburb.",
+    "liveDestinationLookupUnavailable": "Couldn’t load more places. Check your connection and try again.",
     "searchAtLeastThreeCharacters": "Enter at least 3 characters to search.",
     "@searchAtLeastThreeCharacters": {
         "description": "Minimum destination search length"

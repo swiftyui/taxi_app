@@ -149,8 +149,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearDestinationSearch => 'Clear search';
 
   @override
-  String get submitDestinationSearch =>
-      'Tap Search to look up this destination.';
+  String get adjustDestinationSearch => 'Try another spelling or add a suburb.';
+
+  @override
+  String get liveDestinationLookupUnavailable =>
+      'Couldn’t load more places. Check your connection and try again.';
 
   @override
   String get searchAtLeastThreeCharacters =>

@@ -5,8 +5,11 @@ import 'package:TaxiApp/src/core/services/destination_query.dart';
 import 'package:TaxiApp/src/core/services/destination_search_history.dart';
 import 'package:TaxiApp/src/core/services/destination_search_service.dart';
 import 'package:TaxiApp/src/core/services/osm_geocoding_service.dart';
+import 'package:TaxiApp/src/core/services/photon_place_search.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -88,6 +91,74 @@ void main() {
         _menlyn.label,
       );
       expect(geocoding.calls, 2);
+    },
+  );
+
+  test('looks up an unfamiliar typo on Photon and caches the result', () async {
+    final geocoding = _GeocodingStub();
+    var requests = 0;
+    final photon = PhotonPlaceSearch(
+      client: MockClient((request) async {
+        requests++;
+        expect(request.url.host, 'photon.komoot.io');
+        expect(request.url.queryParameters, {
+          'q': 'Pretroia Zoo',
+          'countrycode': 'ZA',
+          'limit': '6',
+        });
+        return http.Response('''
+            {"features": [
+              {"properties": {"name": "Pretoria Zoo", "housenumber": 232,
+                "street": "Boom Street", "city": "Pretoria", "countrycode": "ZA"},
+                "geometry": {"type": "Point", "coordinates": [28.189, -25.738]}},
+              {"properties": {"name": "Other zoo", "countrycode": "US"},
+                "geometry": {"type": "Point", "coordinates": [-71, 42]}},
+              {"properties": {"name": "Invalid location"},
+                "geometry": {"type": "Point", "coordinates": ["?", 42]}}
+            ]}
+          ''', 200);
+      }),
+    );
+    final service = DestinationSearchService(
+      geocoding: geocoding,
+      photon: photon,
+    );
+
+    expect(await service.liveSuggestions('Pr'), isEmpty);
+    final suggestions = await service.liveSuggestions('Pretroia Zoo');
+    expect(suggestions.single.label, 'Pretoria Zoo');
+    expect(suggestions.single.subtitle, '232 Boom Street, Pretoria');
+    expect(suggestions.single.position, const LatLng(-25.738, 28.189));
+    expect(await service.liveSuggestions('pretroia zoo '), same(suggestions));
+    expect(requests, 1);
+    expect(geocoding.calls, 0);
+  });
+
+  test(
+    'can retry a failed live lookup without losing local suggestions',
+    () async {
+      var requests = 0;
+      final service = DestinationSearchService(
+        photon: PhotonPlaceSearch(
+          client: MockClient((_) async {
+            requests++;
+            return requests == 1
+                ? http.Response('', 429)
+                : http.Response('{"features":[]}', 200);
+          }),
+        ),
+      );
+
+      await expectLater(
+        service.liveSuggestions('Menlyn'),
+        throwsA(isA<http.ClientException>()),
+      );
+      expect(
+        service.mergeSuggestions(query: 'Menlyn', local: [_menlyn], online: []),
+        [_menlyn],
+      );
+      expect(await service.liveSuggestions('Menlyn'), isEmpty);
+      expect(requests, 2);
     },
   );
 

@@ -358,11 +358,17 @@ abstract class AppLocalizations {
   /// **'Clear search'**
   String get clearDestinationSearch;
 
-  /// No description provided for @submitDestinationSearch.
+  /// No description provided for @adjustDestinationSearch.
   ///
   /// In en, this message translates to:
-  /// **'Tap Search to look up this destination.'**
-  String get submitDestinationSearch;
+  /// **'Try another spelling or add a suburb.'**
+  String get adjustDestinationSearch;
+
+  /// No description provided for @liveDestinationLookupUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load more places. Check your connection and try again.'**
+  String get liveDestinationLookupUnavailable;
 
   /// Minimum destination search length
   ///
