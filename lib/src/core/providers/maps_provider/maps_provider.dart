@@ -38,6 +38,7 @@ class MapsProvider extends GetxController {
   final List<HambaMapRouteBadge> routeBadges = [];
   double journeyPreviewPanelHeight = 0;
   double journeyGuidancePanelHeight = 0;
+  double _journeyPanelExtent = 0;
   bool _followingJourney = false;
   JourneyBearing? _journeyBearing;
   final RxnDouble journeyBearing = RxnDouble();
@@ -385,11 +386,17 @@ class MapsProvider extends GetxController {
 
   void endJourneyCamera() {
     stopFollowingJourney();
+    _journeyPanelExtent = 0;
     if (_journeyBearing != null) {
       _journeyBearing = null;
       journeyBearing.value = null;
       mapController.rotate(0);
     }
+  }
+
+  void updateJourneyPanelExtent(double extent) {
+    _journeyPanelExtent = extent;
+    updateJourneyLocation();
   }
 
   void updateJourneyLocation({bool zoomIn = false}) {
@@ -410,13 +417,16 @@ class MapsProvider extends GetxController {
     final camera = mapController.camera;
     final zoom = zoomIn ? math.max(camera.zoom, 16.0) : camera.zoom;
     final mapHeight = camera.nonRotatedSize.height;
-    final panelHeight = journeyGuidancePanelHeight.clamp(
-      mapHeight * .15,
-      mapHeight * .8,
-    );
+    final panelHeight = math
+        .max(journeyGuidancePanelHeight, mapHeight * _journeyPanelExtent)
+        .clamp(mapHeight * .15, mapHeight * .8);
     final visibleHeight = mapHeight - panelHeight;
-    // Leave room to see the route ahead above the location marker.
-    final locationOffset = visibleHeight * .58 - mapHeight / 2;
+    // Show more of the road ahead while keeping the arrow clear of the sheet.
+    final arrowY = math.min(
+      visibleHeight * .80,
+      math.max(0.0, visibleHeight - 28),
+    );
+    final locationOffset = arrowY - mapHeight / 2;
     final rotation = -(bearing ?? 0.0);
     final point = camera.projectAtZoom(
       LatLng(position.latitude, position.longitude),

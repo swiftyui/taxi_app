@@ -80,6 +80,21 @@ class _LandingScreenState extends State<LandingScreen> {
     }
   }
 
+  bool _onJourneySheetResized(DraggableScrollableNotification notification) {
+    if (notification.depth == 0 &&
+        _mapReady &&
+        _actionsProvider.selectedAction.value == ActionType.journeyStarted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted &&
+            _actionsProvider.selectedAction.value ==
+                ActionType.journeyStarted) {
+          _mapsProvider.updateJourneyPanelExtent(notification.extent);
+        }
+      });
+    }
+    return false;
+  }
+
   @override
   void dispose() {
     _locationWorker.dispose();
@@ -114,12 +129,16 @@ class _LandingScreenState extends State<LandingScreen> {
                 : LatLng(location.latitude, location.longitude),
             onReady: () {
               _mapReady = true;
+              _mapsProvider.updateJourneyPanelExtent(0);
               _centerOnInitialLocation();
               _updateJourneyCamera(_actionsProvider.selectedAction.value);
             },
             onMapGesture: _mapsProvider.stopFollowingJourney,
           ),
-          LandingBottomSheet(),
+          NotificationListener<DraggableScrollableNotification>(
+            onNotification: _onJourneySheetResized,
+            child: LandingBottomSheet(),
+          ),
           Align(
             alignment: Alignment.topCenter,
             child: SafeArea(
