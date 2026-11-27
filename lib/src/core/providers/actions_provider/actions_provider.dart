@@ -26,12 +26,14 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
   final Rxn<DestinationSearchResult> selectedDestination =
       Rxn<DestinationSearchResult>();
   final Rxn<TaxiJourney> journey = Rxn<TaxiJourney>();
+  final RxList<TaxiJourney> journeyOptions = <TaxiJourney>[].obs;
   final RxBool isPlanningJourney = false.obs;
   final RxnString journeyError = RxnString();
   final RxInt activeJourneyStepIndex = 0.obs;
   final RxDouble distanceToNextStepMeters = 0.0.obs;
   final RxBool isJourneyComplete = false.obs;
   Future<String>? _activeTravelLog;
+  int _planRequest = 0;
 
   @override
   void onInit() {
@@ -73,9 +75,11 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
 
   Future<void> planJourney(DestinationSearchResult destination) async {
     final mapsProvider = MapsProvider.create();
+    final request = ++_planRequest;
     selectedRoute.value = null;
     selectedDestination.value = destination;
     journey.value = null;
+    journeyOptions.clear();
     journeyError.value = null;
     selectedAction.value = ActionType.planningJourney;
     isPlanningJourney.value = true;
@@ -86,6 +90,9 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
       final position =
           locationProvider.userLocation.value ??
           await locationProvider.refreshLocation(requestPermission: true);
+      if (request != _planRequest) {
+        return;
+      }
       if (position == null) {
         journeyError.value =
             locationProvider.errorMessage.value ??
@@ -97,6 +104,9 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
       if (taxiRoutesProvider.taxiRoutes.isEmpty) {
         await taxiRoutesProvider.loadRoutes();
       }
+      if (request != _planRequest) {
+        return;
+      }
       if (taxiRoutesProvider.taxiRoutes.isEmpty) {
         journeyError.value =
             taxiRoutesProvider.errorMessage.value ??
@@ -104,27 +114,44 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
         return;
       }
 
-      final plannedJourney = await const TaxiRoutingService()
-          .findBestJourneyAsync(
-            origin: LatLng(position.latitude, position.longitude),
-            destination: destination,
-            routes: taxiRoutesProvider.taxiRoutes,
-          );
-      if (plannedJourney == null) {
+      final options = await const TaxiRoutingService().findJourneyOptionsAsync(
+        origin: LatLng(position.latitude, position.longitude),
+        destination: destination,
+        routes: taxiRoutesProvider.taxiRoutes,
+      );
+      if (request != _planRequest) {
+        return;
+      }
+      if (options.isEmpty) {
         journeyError.value =
             'No direct or connecting taxi journey was found within the '
             'supported walking distances.';
         return;
       }
 
-      journey.value = plannedJourney;
+      journeyOptions.assignAll(options);
+      journey.value = options.first;
       selectedAction.value = ActionType.journeyReady;
     } catch (_) {
-      journeyError.value = 'Unable to plan this journey. Please try again.';
+      if (request == _planRequest) {
+        journeyError.value = 'Unable to plan this journey. Please try again.';
+      }
     } finally {
-      isPlanningJourney.value = false;
-      await mapsProvider.updateMarkers();
+      if (request == _planRequest) {
+        isPlanningJourney.value = false;
+        await mapsProvider.updateMarkers();
+      }
     }
+  }
+
+  void selectJourneyOption(TaxiJourney option) {
+    if (selectedAction.value != ActionType.journeyReady ||
+        journey.value == option ||
+        !journeyOptions.contains(option)) {
+      return;
+    }
+    journey.value = option;
+    MapsProvider.create().updateMarkers(fitCamera: false);
   }
 
   Future<void> startJourneyOnRoute(NearbyTaxiRouteModel route) async {
@@ -140,9 +167,11 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
       position: route.destinationPoint,
     );
     final mapsProvider = MapsProvider.create();
+    final request = ++_planRequest;
     selectedRoute.value = route;
     selectedDestination.value = destination;
     journey.value = null;
+    journeyOptions.clear();
     journeyError.value = null;
     selectedAction.value = ActionType.planningJourney;
     isPlanningJourney.value = true;
@@ -153,6 +182,9 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
       final position =
           locationProvider.userLocation.value ??
           await locationProvider.refreshLocation(requestPermission: true);
+      if (request != _planRequest) {
+        return;
+      }
       if (position == null) {
         journeyError.value =
             locationProvider.errorMessage.value ??
@@ -166,6 +198,9 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
             destination: destination,
             route: route.model,
           );
+      if (request != _planRequest) {
+        return;
+      }
       if (plannedJourney == null) {
         journeyError.value =
             'This route cannot be joined from your current location in its '
@@ -177,11 +212,15 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
       selectedAction.value = ActionType.journeyReady;
       startJourney();
     } catch (_) {
-      journeyError.value =
-          'Unable to start a journey on this route. Please try again.';
+      if (request == _planRequest) {
+        journeyError.value =
+            'Unable to start a journey on this route. Please try again.';
+      }
     } finally {
-      isPlanningJourney.value = false;
-      await mapsProvider.updateMarkers();
+      if (request == _planRequest) {
+        isPlanningJourney.value = false;
+        await mapsProvider.updateMarkers();
+      }
     }
   }
 
@@ -229,8 +268,10 @@ class ActionsProvider extends GetxController with RxWorkerMixin {
   }
 
   void _clearJourneyState() {
+    _planRequest++;
     selectedDestination.value = null;
     journey.value = null;
+    journeyOptions.clear();
     journeyError.value = null;
     isPlanningJourney.value = false;
     activeJourneyStepIndex.value = 0;

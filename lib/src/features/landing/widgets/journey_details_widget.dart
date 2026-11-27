@@ -21,6 +21,8 @@ class JourneyDetailsWidget extends StatelessWidget {
     final destination = _actionsProvider.selectedDestination.value;
     final journey = _actionsProvider.journey.value;
     final error = _actionsProvider.journeyError.value;
+    final previewing =
+        _actionsProvider.selectedAction.value == ActionType.journeyReady;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -46,6 +48,7 @@ class JourneyDetailsWidget extends StatelessWidget {
               IconButton(
                 onPressed: _actionsProvider.clearJourney,
                 icon: const Icon(Icons.close),
+                tooltip: 'Close journey',
               ),
             ],
           ),
@@ -65,6 +68,12 @@ class JourneyDetailsWidget extends StatelessWidget {
                   : _actionsProvider.retryJourneyPlanning,
             ),
           ] else if (journey != null) ...[
+            if (previewing)
+              _JourneyPreview(
+                journey: journey,
+                options: _actionsProvider.journeyOptions,
+                onSelect: _actionsProvider.selectJourneyOption,
+              ),
             if (_actionsProvider.selectedAction.value ==
                     ActionType.journeyStarted ||
                 _actionsProvider.selectedAction.value ==
@@ -76,15 +85,13 @@ class JourneyDetailsWidget extends StatelessWidget {
                     _actionsProvider.distanceToNextStepMeters.value,
                 isComplete: _actionsProvider.isJourneyComplete.value,
               ),
-            Text(
-              journey.transferCount == 0
-                  ? Get.appLocalizations.directTaxiJourney
-                  : '${journey.transferCount} taxi transfer'
-                        '${journey.transferCount == 1 ? '' : 's'}',
-              style: Get.textTheme.labelLarge?.copyWith(
-                color: Colours.charcoalLight,
-              ),
-            ).paddingOnly(bottom: Dimensions.twelve),
+            if (!previewing)
+              Text(
+                _journeyType(journey),
+                style: Get.textTheme.labelLarge?.copyWith(
+                  color: Colours.charcoalLight,
+                ),
+              ).paddingOnly(bottom: Dimensions.twelve),
             for (
               var stepIndex = 0;
               stepIndex < journey.steps.length;
@@ -166,6 +173,92 @@ class JourneyDetailsWidget extends StatelessWidget {
   });
 
   String get _walkingRouteNotice => Get.appLocalizations.walkingEstimateNotice;
+}
+
+String _journeyType(TaxiJourney journey) => journey.transferCount == 0
+    ? Get.appLocalizations.directTaxiJourney
+    : '${journey.transferCount} taxi transfer'
+          '${journey.transferCount == 1 ? '' : 's'}';
+
+class _JourneyPreview extends StatelessWidget {
+  const _JourneyPreview({
+    required this.journey,
+    required this.options,
+    required this.onSelect,
+  });
+
+  final TaxiJourney journey;
+  final List<TaxiJourney> options;
+  final ValueChanged<TaxiJourney> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final recommended = options.isNotEmpty && options.first == journey;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Dimensions.twelve),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '≈ ${journey.estimatedTravelMinutes} min',
+                  style: const TextStyle(
+                    color: Colours.journeyPurple,
+                    fontSize: 23,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+                ),
+              ),
+              Text(
+                TaxiRoutingService.formatDistance(journey.totalDistanceMeters),
+                style: const TextStyle(
+                  color: Colours.charcoal,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            '${recommended ? 'Recommended · ' : ''}${_journeyType(journey)}',
+            style: const TextStyle(
+              color: Colours.charcoal,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 5),
+          const Text(
+            'Travel estimate excludes traffic and taxi wait time.',
+            style: TextStyle(color: Colours.charcoalLight, fontSize: 11),
+          ),
+          if (options.length > 1) ...[
+            const SizedBox(height: 7),
+            Wrap(
+              spacing: Dimensions.eight,
+              runSpacing: Dimensions.four,
+              children: [
+                for (final (index, option) in options.indexed)
+                  ChoiceChip(
+                    label: Text(
+                      index == 0 ? 'Recommended' : 'Route ${index + 1}',
+                    ),
+                    selected: option == journey,
+                    selectedColor: const Color(0xFFEDE2FC),
+                    onSelected: (_) => onSelect(option),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _JourneySafetyAction extends StatelessWidget {

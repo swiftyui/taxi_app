@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 abstract class Colours {
+  static const journeyPurple = Color(0xFF6D35C4);
+
   static const primaryOne = Color(0xFF1d2636);
   static const primaryTwo = Color(0xFF333c4d);
   static const primaryThree = Color(0xFF252b37);

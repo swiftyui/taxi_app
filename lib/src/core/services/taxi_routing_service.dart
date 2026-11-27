@@ -31,6 +31,20 @@ class TaxiRoutingService {
     ),
   );
 
+  Future<List<TaxiJourney>> findJourneyOptionsAsync({
+    required LatLng origin,
+    required DestinationSearchResult destination,
+    required Iterable<TaxiRouteModel> routes,
+  }) => compute(
+    _findJourneyOptionsInBackground,
+    _RoutingRequest(
+      service: this,
+      origin: origin,
+      destination: destination,
+      routes: routes.toList(growable: false),
+    ),
+  );
+
   Future<TaxiJourney?> findJourneyForRouteAsync({
     required LatLng origin,
     required DestinationSearchResult destination,
@@ -55,28 +69,67 @@ class TaxiRoutingService {
     required LatLng origin,
     required DestinationSearchResult destination,
     required Iterable<TaxiRouteModel> routes,
+  }) => _findJourneyOptions(
+    origin: origin,
+    destination: destination,
+    routes: routes,
+    limit: 1,
+  ).firstOrNull;
+
+  List<TaxiJourney> findJourneyOptions({
+    required LatLng origin,
+    required DestinationSearchResult destination,
+    required Iterable<TaxiRouteModel> routes,
+  }) => _findJourneyOptions(
+    origin: origin,
+    destination: destination,
+    routes: routes,
+    limit: 3,
+  );
+
+  List<TaxiJourney> _findJourneyOptions({
+    required LatLng origin,
+    required DestinationSearchResult destination,
+    required Iterable<TaxiRouteModel> routes,
+    required int limit,
   }) {
     final paths = _buildPaths(routes);
-    final directJourney = _findBestDirectJourney(
-      paths: paths,
-      origin: origin,
-      destination: destination.position,
-    );
     final transferJourney = _findBestTransferJourney(
       paths: paths,
       origin: origin,
       destination: destination.position,
     );
 
-    final bestJourney = switch ((directJourney, transferJourney)) {
-      (null, null) => null,
-      (final direct?, null) => direct,
-      (null, final transfer?) => transfer,
-      (final direct?, final transfer?) =>
-        direct.score <= transfer.score ? direct : transfer,
-    };
+    final candidates =
+        [
+          ..._findDirectJourneys(
+            paths: paths,
+            origin: origin,
+            destination: destination.position,
+          ),
+          ?transferJourney,
+        ].indexed.toList()..sort((first, second) {
+          final score = first.$2.score.compareTo(second.$2.score);
+          return score == 0 ? first.$1.compareTo(second.$1) : score;
+        });
 
-    return bestJourney?.toJourney(origin, destination);
+    final selected = <_JourneyCandidate>[];
+    for (final (_, candidate) in candidates) {
+      // Keep substantially less practical trips out of the preview.
+      if (selected.isNotEmpty &&
+          candidate.score > selected.first.score + 1800) {
+        break;
+      }
+      if (selected.every(candidate.takesDifferentStreetsFrom)) {
+        selected.add(candidate);
+      }
+      if (selected.length == limit) {
+        break;
+      }
+    }
+    return List.unmodifiable(
+      selected.map((candidate) => candidate.toJourney(origin, destination)),
+    );
   }
 
   List<_RoutePath> _buildPaths(Iterable<TaxiRouteModel> routes) => [
@@ -96,14 +149,13 @@ class TaxiRoutingService {
           ),
   ];
 
-  _JourneyCandidate? _findBestDirectJourney({
+  Iterable<_JourneyCandidate> _findDirectJourneys({
     required List<_RoutePath> paths,
     required LatLng origin,
     required LatLng destination,
-  }) {
-    _JourneyCandidate? bestCandidate;
-
+  }) sync* {
     for (final path in paths) {
+      _JourneyCandidate? bestCandidate;
       final metrics = _PathMetrics(
         path: path,
         origin: origin,
@@ -139,8 +191,10 @@ class TaxiRoutingService {
           bestCandidate = candidate;
         }
       }
+      if (bestCandidate != null) {
+        yield bestCandidate;
+      }
     }
-    return bestCandidate;
   }
 
   _JourneyCandidate? _findBestTransferJourney({
@@ -286,6 +340,13 @@ class TaxiRoutingService {
 
 TaxiJourney? _findBestJourneyInBackground(_RoutingRequest request) =>
     request.service.findBestJourney(
+      origin: request.origin,
+      destination: request.destination,
+      routes: request.routes,
+    );
+
+List<TaxiJourney> _findJourneyOptionsInBackground(_RoutingRequest request) =>
+    request.service.findJourneyOptions(
       origin: request.origin,
       destination: request.destination,
       routes: request.routes,
@@ -452,6 +513,61 @@ class _JourneyCandidate {
       walkToDestinationMeters * 1.5 +
       legs.fold(0, (total, leg) => total + leg.distanceMeters * 0.05) +
       transferWalkMeters.length * 1500;
+
+  bool takesDifferentStreetsFrom(_JourneyCandidate other) {
+    if (legs.length == other.legs.length &&
+        legs.indexed.every(
+          (entry) => entry.$2.route.id == other.legs[entry.$1].route.id,
+        )) {
+      return false;
+    }
+
+    // Route records can describe the same corridor. Require two samples of
+    // the taxi ride to leave that corridor before offering it as another trip.
+    var outsideCorridor = 0;
+    for (final leg in legs) {
+      final points = leg.routePoints;
+      final intervals = math.min(8, points.length - 1);
+      for (var sample = 0; sample <= intervals; sample++) {
+        final point =
+            points[(sample * (points.length - 1) / intervals).round()];
+        if (!other._passesNear(point) && ++outsideCorridor == 2) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _passesNear(LatLng point) {
+    const metersPerDegree = 111000.0;
+    const corridorRadiusMeters = 105.0;
+    final metersPerLongitude =
+        metersPerDegree *
+        math.cos(TaxiRoutingService._toRadians(point.latitude));
+    for (final leg in legs) {
+      final points = leg.routePoints;
+      for (var index = 1; index < points.length; index++) {
+        final start = points[index - 1];
+        final end = points[index];
+        final x = (start.longitude - point.longitude) * metersPerLongitude;
+        final y = (start.latitude - point.latitude) * metersPerDegree;
+        final dx = (end.longitude - start.longitude) * metersPerLongitude;
+        final dy = (end.latitude - start.latitude) * metersPerDegree;
+        final squaredLength = dx * dx + dy * dy;
+        final fraction = squaredLength == 0
+            ? 0.0
+            : (-(x * dx + y * dy) / squaredLength).clamp(0.0, 1.0);
+        final closestX = x + fraction * dx;
+        final closestY = y + fraction * dy;
+        if (closestX * closestX + closestY * closestY <=
+            corridorRadiusMeters * corridorRadiusMeters) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
   TaxiJourney toJourney(LatLng origin, DestinationSearchResult destination) {
     final steps = <JourneyStep>[

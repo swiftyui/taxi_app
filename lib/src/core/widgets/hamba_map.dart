@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:TaxiApp/src/core/theme/constants/colours.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ class HambaMap extends StatelessWidget {
     this.onReady,
     this.markers = const [],
     this.paths = const [],
+    this.routeBadges = const [],
     this.userLocation,
     this.showAttribution = true,
     super.key,
@@ -29,6 +31,7 @@ class HambaMap extends StatelessWidget {
   final VoidCallback? onReady;
   final List<HambaMapMarker> markers;
   final List<HambaMapPath> paths;
+  final List<HambaMapRouteBadge> routeBadges;
   final LatLng? userLocation;
   final bool showAttribution;
 
@@ -65,8 +68,9 @@ class HambaMap extends StatelessWidget {
                     points: path.points,
                     color: path.color,
                     strokeWidth: path.width,
-                    borderColor: Colors.white,
-                    borderStrokeWidth: path.dashed ? 2 : 4,
+                    borderColor: path.borderColor,
+                    borderStrokeWidth:
+                        path.borderWidth ?? (path.dashed ? 2 : 4),
                     pattern: path.dashed
                         ? _walkingPattern
                         : const StrokePattern.solid(),
@@ -94,6 +98,22 @@ class HambaMap extends StatelessWidget {
                   ),
               ],
             ),
+          if (routeBadges.isNotEmpty)
+            MarkerLayer(
+              markers: [
+                for (final badge in routeBadges)
+                  Marker(
+                    point: badge.position,
+                    width: 122,
+                    height: 63,
+                    alignment: badge.aboveRoute
+                        ? Alignment.topCenter
+                        : Alignment.bottomCenter,
+                    rotate: true,
+                    child: _MapRouteCallout(badge: badge),
+                  ),
+              ],
+            ),
         ],
       ),
       if (showAttribution)
@@ -108,6 +128,103 @@ class HambaMap extends StatelessWidget {
         ),
     ],
   );
+}
+
+class _MapRouteCallout extends StatelessWidget {
+  const _MapRouteCallout({required this.badge});
+
+  final HambaMapRouteBadge badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = badge.selected;
+    final background = selected ? Colours.journeyPurple : Colors.white;
+    final foreground = selected ? Colors.white : const Color(0xFF44296E);
+    final border = selected ? Colours.journeyPurple : const Color(0xFFD6C6EA);
+    return Align(
+      alignment: badge.aboveRoute
+          ? Alignment.bottomCenter
+          : Alignment.topCenter,
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label:
+            'Route ${badge.optionNumber}, about ${badge.minutes} minutes'
+            '${badge.recommended ? ', recommended' : ''}',
+        excludeSemantics: true,
+        onTap: badge.onTap,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned(
+              top: badge.aboveRoute ? null : 2,
+              bottom: badge.aboveRoute ? 2 : null,
+              child: Transform.rotate(
+                angle: math.pi / 4,
+                child: Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: background,
+                    border: Border.all(color: border),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(
+                top: badge.aboveRoute ? 0 : 6,
+                bottom: badge.aboveRoute ? 6 : 0,
+              ),
+              child: Material(
+                color: background,
+                elevation: selected ? 4 : 2,
+                shadowColor: const Color(0xFF4A2E6D).withValues(alpha: .36),
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(color: border),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: badge.onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '≈ ${badge.minutes} min',
+                          style: TextStyle(
+                            color: foreground,
+                            fontSize: selected ? 16 : 14,
+                            fontWeight: FontWeight.w800,
+                            height: 1.15,
+                          ),
+                        ),
+                        if (selected)
+                          Text(
+                            badge.recommended ? 'Recommended' : 'Selected',
+                            style: TextStyle(
+                              color: foreground,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              height: 1.25,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _HambaBasemap extends StatefulWidget {
@@ -356,9 +473,33 @@ class HambaMapPath {
     required this.color,
     this.width = 5,
     this.dashed = false,
+    this.borderColor = Colors.white,
+    this.borderWidth,
   });
   final List<LatLng> points;
   final Color color;
   final double width;
   final bool dashed;
+  final Color borderColor;
+  final double? borderWidth;
+}
+
+class HambaMapRouteBadge {
+  const HambaMapRouteBadge({
+    required this.position,
+    required this.minutes,
+    required this.optionNumber,
+    required this.selected,
+    required this.recommended,
+    required this.aboveRoute,
+    required this.onTap,
+  });
+
+  final LatLng position;
+  final int minutes;
+  final int optionNumber;
+  final bool selected;
+  final bool recommended;
+  final bool aboveRoute;
+  final VoidCallback onTap;
 }

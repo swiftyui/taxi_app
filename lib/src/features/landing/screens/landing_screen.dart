@@ -63,6 +63,7 @@ class _LandingScreenState extends State<LandingScreen> {
             zoom: _mapsProvider.initialZoom.value,
             markers: _mapsProvider.markers,
             paths: _mapsProvider.paths,
+            routeBadges: _mapsProvider.routeBadges,
             showAttribution: false,
             userLocation: location == null
                 ? null

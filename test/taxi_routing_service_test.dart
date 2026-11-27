@@ -52,6 +52,85 @@ void main() {
   });
 
   group('TaxiRoutingService', () {
+    test(
+      'keeps distinct journey options and skips duplicate corridors',
+      () async {
+        final fastest = _routeWithCoordinates(
+          [
+            [28.000, -25.000],
+            [28.012, -25.000],
+            [28.024, -25.000],
+            [28.035, -25.000],
+          ],
+          id: 101,
+          routeId: 'MAIN',
+        );
+        final duplicate = _routeWithCoordinates(
+          [
+            [28.000, -25.00002],
+            [28.012, -25.00002],
+            [28.024, -25.00002],
+            [28.035, -25.00002],
+          ],
+          id: 102,
+          routeId: 'DUPLICATE',
+        );
+        final north = _routeWithCoordinates(
+          [
+            [28.000, -25.000],
+            [28.012, -24.996],
+            [28.024, -24.996],
+            [28.035, -25.000],
+          ],
+          id: 103,
+          routeId: 'NORTH',
+        );
+        final south = _routeWithCoordinates(
+          [
+            [28.000, -25.000],
+            [28.012, -25.005],
+            [28.024, -25.005],
+            [28.035, -25.000],
+          ],
+          id: 104,
+          routeId: 'SOUTH',
+        );
+        const destination = DestinationSearchResult(
+          label: 'Destination',
+          subtitle: 'Pretoria',
+          position: LatLng(-25, 28.035),
+        );
+        const origin = LatLng(-25, 28);
+        const service = TaxiRoutingService();
+        final routes = [duplicate, north, fastest, south];
+
+        final options = await service.findJourneyOptionsAsync(
+          origin: origin,
+          destination: destination,
+          routes: routes,
+        );
+
+        expect(options.map((option) => option.taxiLegs.single.route.id), [
+          fastest.id,
+          north.id,
+          south.id,
+        ]);
+        expect(
+          service
+              .findBestJourney(
+                origin: origin,
+                destination: destination,
+                routes: routes,
+              )
+              ?.taxiLegs
+              .single
+              .route
+              .id,
+          fastest.id,
+        );
+      },
+    );
+
     test('builds walking, directional taxi, and final walking steps', () {
       final route = _routeWithCoordinates([
         [28.0000, -25.0000],
