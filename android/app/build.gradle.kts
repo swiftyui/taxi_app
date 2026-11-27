@@ -9,7 +9,10 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val releaseSigningFile = rootProject.file("key.properties")
+val defaultReleaseSigningFile = rootProject.file("key.properties")
+val releaseSigningFile = providers.environmentVariable("HAMBA_ANDROID_KEY_PROPERTIES")
+    .map { rootProject.file(it) }
+    .getOrElse(defaultReleaseSigningFile)
 val releaseSigningProperties = Properties().apply {
     if (releaseSigningFile.isFile) {
         releaseSigningFile.inputStream().use { load(it) }
@@ -17,16 +20,19 @@ val releaseSigningProperties = Properties().apply {
 }
 val releaseKeystore = releaseSigningProperties.getProperty("storeFile")
     ?.takeIf { it.isNotBlank() }
-    ?.let { file(it) }
+    ?.let {
+        if (releaseSigningFile == defaultReleaseSigningFile) file(it)
+        else releaseSigningFile.parentFile.resolve(it)
+    }
 val missingSigningProperties = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
     .filter { releaseSigningProperties.getProperty(it).isNullOrBlank() }
 val releaseSigningError = when {
     !releaseSigningFile.isFile ->
-        "Android release signing requires android/key.properties. Restore it with the settings for the HambaGo upload keystore."
+        "Android release signing requires android/key.properties or HAMBA_ANDROID_KEY_PROPERTIES with the HambaGo upload keystore settings."
     missingSigningProperties.isNotEmpty() ->
-        "Android release signing is missing these properties in android/key.properties: ${missingSigningProperties.joinToString()}."
+        "Android release signing is missing these properties: ${missingSigningProperties.joinToString()}."
     releaseKeystore?.isFile != true ->
-        "Android release signing could not find the keystore configured as storeFile in android/key.properties."
+        "Android release signing could not find the keystore configured as storeFile."
     else -> null
 }
 
@@ -64,7 +70,7 @@ android {
         applicationId = "com.vanzylarno.taxiApp"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 6
+        versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
